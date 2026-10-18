@@ -1,0 +1,196 @@
+{
+  "name": "TombstoneDesign",
+  "type": "object",
+  "properties": {
+    "cemetery_profile": {
+      "type": "string"
+    },
+    "stone_type": {
+      "type": "string"
+    },
+    "tombstone_type": {
+      "type": "string"
+    },
+    "panel": {
+      "type": "string"
+    },
+    "frame": {
+      "type": "string"
+    },
+    "slab": {
+      "type": "string"
+    },
+    "headstone_top": {
+      "type": "string"
+    },
+    "headstone_placement": {
+      "type": "string",
+      "enum": [
+        "top",
+        "sides",
+        "lying"
+      ],
+      "default": "top"
+    },
+    "headstone_scale": {
+      "type": "number"
+    },
+    "headstone_thickness": {
+      "type": "number"
+    },
+    "headstone_offset_x": {
+      "type": "number"
+    },
+    "headstone_offset_z": {
+      "type": "number"
+    },
+    "panel_width_cm": {
+      "type": "number"
+    },
+    "panel_length_cm": {
+      "type": "number"
+    },
+    "panel_height_cm": {
+      "type": "number"
+    },
+    "accessory_positions": {
+      "type": "object"
+    },
+    "frame_width_cm": {
+      "type": "number"
+    },
+    "frame_length_cm": {
+      "type": "number"
+    },
+    "frame_height_cm": {
+      "type": "number"
+    },
+    "slab_width_cm": {
+      "type": "number"
+    },
+    "slab_length_cm": {
+      "type": "number"
+    },
+    "slab_height_cm": {
+      "type": "number"
+    },
+    "headstone_width_cm": {
+      "type": "number"
+    },
+    "headstone_height_cm": {
+      "type": "number"
+    },
+    "headstone_text_scale": {
+      "type": "number"
+    },
+    "panel_stone": {
+      "type": "string"
+    },
+    "frame_stone": {
+      "type": "string"
+    },
+    "slab_stone": {
+      "type": "string"
+    },
+    "headstone_stone": {
+      "type": "string"
+    },
+    "accessories": {
+      "type": "object"
+    },
+    "ner_house": {
+      "type": "string",
+      "enum": [
+        "front",
+        "behind"
+      ]
+    },
+    "ner_house_size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "default": "medium"
+    },
+    "ner_house_style": {
+      "type": "string",
+      "enum": [
+        "arched",
+        "gabled",
+        "pyramid_blue"
+      ],
+      "default": "arched"
+    },
+    "lettering_type": {
+      "type": "string"
+    },
+    "engraving_text": {
+      "type": "string"
+    },
+    "slab_text": {
+      "type": "string"
+    },
+    "custom_prompt": {
+      "type": "string"
+    },
+    "custom_image_url": {
+      "type": "string"
+    },
+    "show_price": {
+      "type": "boolean",
+      "default": true
+    },
+    "deceased_name": {
+      "type": "string"
+    },
+    "cemetery": {
+      "type": "string"
+    },
+    "gush": {
+      "type": "string"
+    },
+    "chelka": {
+      "type": "string"
+    },
+    "row": {
+      "type": "string"
+    },
+    "grave_number": {
+      "type": "string"
+    },
+    "completion_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "price_before_vat": {
+      "type": "number"
+    },
+    "price_total": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "default": "new"
+    }
+  },
+  "required": [
+    "stone_type",
+    "tombstone_type",
+    "contact_name",
+    "contact_phone"
+  ]
+}

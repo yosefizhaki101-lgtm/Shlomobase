@@ -1,0 +1,45 @@
+{
+  "name": "PartTexture",
+  "type": "object",
+  "properties": {
+    "stone_type_id": {
+      "type": "string"
+    },
+    "part_category": {
+      "type": "string",
+      "enum": [
+        "base",
+        "frame",
+        "cover",
+        "pillow"
+      ],
+      "default": "base"
+    },
+    "texture_file": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "stone_type_id",
+    "part_category",
+    "texture_file"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

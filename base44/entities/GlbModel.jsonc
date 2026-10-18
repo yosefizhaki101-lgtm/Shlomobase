@@ -1,0 +1,80 @@
+{
+  "name": "GlbModel",
+  "type": "object",
+  "properties": {
+    "component_type": {
+      "type": "string",
+      "enum": [
+        "headstone",
+        "slab",
+        "frame",
+        "panel",
+        "accessory"
+      ],
+      "default": "headstone"
+    },
+    "option_id": {
+      "type": "string"
+    },
+    "option_label": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "drive_file_id": {
+      "type": "string"
+    },
+    "scale": {
+      "type": "number",
+      "default": 1
+    },
+    "offset_x": {
+      "type": "number",
+      "default": 0
+    },
+    "offset_y": {
+      "type": "number",
+      "default": 0
+    },
+    "offset_z": {
+      "type": "number",
+      "default": 0
+    },
+    "rotation_y": {
+      "type": "number",
+      "default": 0
+    },
+    "keep_original_material": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "component_type",
+    "option_id",
+    "file_url"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
