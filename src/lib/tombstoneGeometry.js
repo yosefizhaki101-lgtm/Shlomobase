@@ -215,6 +215,38 @@ function rockGeo(w, h, d, amt = 0.06, seed = 7) {
   return g;
 }
 
+function rockWallGeo(w, h, d, amt = 0.05, seed = 7) {
+  const W = Math.max(0.01, w), H = Math.max(0.01, h), D = Math.max(0.01, d);
+  const g = new THREE.BoxGeometry(W, H, D, 20, 10, 20);
+  const pos = g.attributes.position;
+  const maxDisplacement = Math.min(amt * 0.8, Math.min(W, D) * 0.28);
+  const v = new THREE.Vector3();
+
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const onSideX = Math.abs(Math.abs(v.x) - W / 2) < 0.0001;
+    const onSideZ = Math.abs(Math.abs(v.z) - D / 2) < 0.0001;
+    if (!onSideX && !onSideZ) continue;
+
+    const cellX = Math.floor((v.x + W / 2) * 28);
+    const cellY = Math.floor((v.y + H / 2) * 24);
+    const cellZ = Math.floor((v.z + D / 2) * 28);
+    const cellHash = Math.sin(cellX * 12.9898 + cellY * 78.233 + cellZ * 37.719 + seed * 19.19) * 43758.5453;
+    const chunk = Math.floor((cellHash - Math.floor(cellHash)) * 5) / 4 - 0.5;
+    const broad = Math.sin(v.x * 5.7 + seed) * Math.cos(v.y * 8.1 + seed * 1.7) * Math.sin(v.z * 5.3 + seed * 2.3);
+    const facet = chunk * 0.75 + Math.round(broad * 2) / 4 * 0.25;
+    const displacement = facet * maxDisplacement;
+
+    // Apply both components at shared corners so adjoining wall faces stay joined.
+    if (onSideX) v.x += Math.sign(v.x) * displacement;
+    if (onSideZ) v.z += Math.sign(v.z) * displacement;
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+
+  g.computeVertexNormals();
+  return g;
+}
+
 const STEP_LIFT = { panel: 0, frame: 0.4, slab: 0.85, headstone: 1.25 };
 
 function place(group, mesh, pos, stepKey) {
@@ -345,10 +377,10 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
 
   // Rock-pitched walls use rugged geometry; smooth walls use sharp-edged boxes
   const wallSideGeo = useRock
-    ? rockGeo(wallT, wallH, innerL + wallT * 2, 0.05, 41)
+    ? rockWallGeo(wallT, wallH, innerL + wallT * 2, 0.05, 41)
     : sharpGeo(wallT, wallH, innerL + wallT * 2);
   const wallFrontGeo = useRock
-    ? rockGeo(innerW, wallH, wallT, 0.05, 43)
+    ? rockWallGeo(innerW, wallH, wallT, 0.05, 43)
     : sharpGeo(innerW, wallH, wallT);
   place(group, new THREE.Mesh(wallSideGeo, mat), new THREE.Vector3(-(innerW / 2 + wallT / 2), y + wallH / 2, 0), 'frame');
   place(group, new THREE.Mesh(wallSideGeo.clone(), mat), new THREE.Vector3(innerW / 2 + wallT / 2, y + wallH / 2, 0), 'frame');
