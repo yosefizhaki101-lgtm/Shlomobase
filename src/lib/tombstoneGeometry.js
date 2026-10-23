@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { makeStoneTextures } from '@/lib/stoneTextures';
 import { makeTextTexture } from '@/lib/tombstoneText';
-import { buildNerHouse } from '@/lib/nerHouseGeometry';
+import { buildNerHouse, getNerHouseFootprint } from '@/lib/nerHouseGeometry';
 import { cloneGlbModel, applyMaterialToModel, transformModel } from '@/lib/glbModelCache';
 import {
   STONE_TYPES,
@@ -1183,12 +1183,20 @@ export function buildTombstone(design, glbModels = null) {
 
   // Memorial candle housing ("בית נר")
   if (design.nerHouse) {
-    const ner = buildNerHouse(design.nerHouseSize || 'medium', design.nerHouseStyle || 'arched');
+    const nerSize = design.nerHouseSize || 'medium';
+    const nerStyle = design.nerHouseStyle || 'arched';
+    const ner = buildNerHouse(nerSize, nerStyle);
+    const fp = getNerHouseFootprint(nerSize, nerStyle);
     if (design.nerHouse === 'front') {
       ner.position.set(0, slabTopY, L * 0.30);
+    } else if (design.headstonePlacement === 'lying') {
+      // Headstone lies flat on the slab — the candle house sits on the slab behind it
+      const lyingLen = design.headstoneHeightCm ? design.headstoneHeightCm / 100 : W * 0.45;
+      ner.position.set(0, slabTopY, -(L * 0.05) - lyingLen / 2 - fp.d / 2 - 0.02);
     } else {
-      // Behind the headstone (the cushion)
-      ner.position.set(0, slabTopY, -L * 0.34);
+      // Behind the standing headstone — on the ground just past the tomb's rear edge
+      const rearOuter = Math.max(L * 0.44 + 0.12, L * 0.5 + 0.08);
+      ner.position.set(0, 0, -(rearOuter + fp.d / 2));
     }
     ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
     group.add(ner);

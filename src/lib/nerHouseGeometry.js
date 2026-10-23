@@ -474,6 +474,25 @@ function buildPyramidBlueNerHouse(group, scale) {
   group.add(candleLight);
 }
 
+// Footprint (metres) of a candle house — used to place it relative to the tomb.
+export function getNerHouseFootprint(size = 'medium', style = 'arched') {
+  const scale = size === 'small' ? 0.72 : size === 'large' ? 1.32 : 1.0;
+  let w, d;
+  switch (style) {
+    case 'gabled':
+      w = 0.36 * 1.3; d = 0.26 * 1.3;
+      break;
+    case 'pyramid_blue':
+      w = 0.34; d = 0.34;
+      break;
+    case 'arched':
+    default:
+      w = 0.38 * 1.4; d = 0.28 * 1.4;
+      break;
+  }
+  return { w: w * scale, d: d * scale };
+}
+
 export function buildNerHouse(size = 'medium', style = 'arched') {
   const group = new THREE.Group();
   const scale = size === 'small' ? 0.72 : size === 'large' ? 1.32 : 1.0;
