@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { makeStoneTextures } from '@/lib/stoneTextures';
 import { makeTextTexture } from '@/lib/tombstoneText';
-import { buildNerHouse, getNerHouseFootprint } from '@/lib/nerHouseGeometry';
+import { buildNerHouse, getNerHouseFootprint, buildMountedCandleHousing } from '@/lib/nerHouseGeometry';
 import { cloneGlbModel, applyMaterialToModel, transformModel } from '@/lib/glbModelCache';
 import {
   STONE_TYPES,
@@ -1178,6 +1178,9 @@ export function buildTombstone(design, glbModels = null) {
     }
   }
 
+  // Top of the headstone — used to size and mount the candle housing on its back face
+  const headstoneTopY = y;
+
   // Accessories sit on the slab surface, not at headstone height
   buildAccessories({ ...ctx, y: slabTopY, stone: bodyStone, accessories: design.accessories, accessoryPositions: design.accessoryPositions });
 
@@ -1185,21 +1188,30 @@ export function buildTombstone(design, glbModels = null) {
   if (design.nerHouse) {
     const nerSize = design.nerHouseSize || 'medium';
     const nerStyle = design.nerHouseStyle || 'arched';
-    const ner = buildNerHouse(nerSize, nerStyle);
-    const fp = getNerHouseFootprint(nerSize, nerStyle);
     if (design.nerHouse === 'front') {
+      // Free-standing candle house on the slab
+      const ner = buildNerHouse(nerSize, nerStyle);
       ner.position.set(0, slabTopY, L * 0.30);
+      ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
+      group.add(ner);
     } else if (design.headstonePlacement === 'lying') {
-      // Headstone lies flat on the slab — the candle house sits on the slab behind it
+      // Headstone lies flat on the slab — the candle house stands on the slab behind it
+      const ner = buildNerHouse(nerSize, nerStyle);
+      const fp = getNerHouseFootprint(nerSize, nerStyle);
       const lyingLen = design.headstoneHeightCm ? design.headstoneHeightCm / 100 : W * 0.45;
       ner.position.set(0, slabTopY, -(L * 0.05) - lyingLen / 2 - fp.d / 2 - 0.02);
+      ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
+      group.add(ner);
     } else {
-      // Behind the standing headstone — on the ground just past the tomb's rear edge
-      const rearOuter = Math.max(L * 0.44 + 0.12, L * 0.5 + 0.08);
-      ner.position.set(0, 0, -(rearOuter + fp.d / 2));
+      // Behind the headstone — the housing is mounted flat on the headstone's back face
+      const hsRise = Math.max(0.2, headstoneTopY - slabTopY);
+      const housing = buildMountedCandleHousing(Math.min(0.30, Math.max(0.18, hsRise * 0.5)));
+      housing.rotation.y = Math.PI; // door faces away from the headstone, into the rear
+      const backZ = -L * 0.47 + (design.headstoneOffsetZ || 0);
+      housing.position.set(0, slabTopY + Math.max(0.04, hsRise * 0.16), backZ - 0.001);
+      housing.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
+      group.add(housing);
     }
-    ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
-    group.add(ner);
   }
 
   // Custom element billboard (prompt-to-image) — positioned as engraving on headstone face
@@ -1247,7 +1259,10 @@ export function buildTombstone(design, glbModels = null) {
     group.updateMatrixWorld(true);
     const helper = new THREE.Object3D();
     helper.position.copy(decalInfo.pos);
-    helper.lookAt(decalInfo.look);
+    // Object3D.lookAt aims local +Z AT the target, while the decal projector needs +Z
+    // pointing away from the surface (camera convention) — aim the opposite way,
+    // otherwise the projector's X axis flips and the engraving comes out mirrored.
+    helper.lookAt(new THREE.Vector3().copy(decalInfo.pos).multiplyScalar(2).sub(decalInfo.look));
     helper.updateMatrixWorld();
     const decalGeo = new DecalGeometry(decalInfo.mesh, decalInfo.pos, helper.rotation, decalInfo.size);
     place(group, new THREE.Mesh(decalGeo, textMat), new THREE.Vector3(0, 0, 0), 'headstone');

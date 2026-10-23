@@ -474,6 +474,55 @@ function buildPyramidBlueNerHouse(group, scale) {
   group.add(candleLight);
 }
 
+// Mounted candle housing — a slim arched bronze housing fixed flat onto a headstone face
+// (the classic "בית נר" seen on memorial headstones). Its back plane sits at y/z = 0,
+// so it can be pressed flat against the stone; the door faces +Z.
+export function buildMountedCandleHousing(height) {
+  const group = new THREE.Group();
+  const h = Math.max(0.12, height);
+  const w = h / 1.5;
+  const d = Math.max(0.03, w * 0.24);
+  const rectH = h * 0.68;
+  const archR = w / 2;
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3a2f24, roughness: 0.45, metalness: 0.8 });
+
+  // Rectangular body — flat against the stone
+  const body = new THREE.Mesh(new RoundedBoxGeometry(w, rectH, d, 3, 0.008), bodyMat);
+  body.position.set(0, rectH / 2, d / 2);
+  body.castShadow = true; body.receiveShadow = true;
+  group.add(body);
+
+  // Arched top
+  const archGeo = new THREE.CylinderGeometry(archR, archR, d, 24, 1, false, 0, Math.PI);
+  archGeo.rotateX(Math.PI / 2);
+  const arch = new THREE.Mesh(archGeo, bodyMat);
+  arch.position.set(0, rectH, d / 2);
+  arch.castShadow = true; arch.receiveShadow = true;
+  group.add(arch);
+
+  // Bronze door face — Star of David, Hebrew blessing and glass pane
+  const doorMat = new THREE.MeshStandardMaterial({
+    map: makeBronzeDoorTexture(), roughness: 0.35, metalness: 0.85,
+    emissive: new THREE.Color(0x1a0e04), emissiveIntensity: 0.08,
+  });
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.84, rectH * 0.94), doorMat);
+  door.position.set(0, rectH / 2, d + 0.002);
+  group.add(door);
+
+  // Lit memorial candle, glowing through the pane
+  const candleMat = new THREE.MeshStandardMaterial({ color: 0xffcc66, emissive: 0xff9933, emissiveIntensity: 3.0 });
+  const candle = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.05, w * 0.06, h * 0.1, 12), candleMat);
+  candle.position.set(0, rectH * 0.35, d * 0.5);
+  group.add(candle);
+
+  const glow = new THREE.PointLight(0xffaa44, 0.6, 0.45);
+  glow.position.set(0, rectH * 0.4, d * 0.6);
+  group.add(glow);
+
+  return group;
+}
+
 // Footprint (metres) of a candle house — used to place it relative to the tomb.
 export function getNerHouseFootprint(size = 'medium', style = 'arched') {
   const scale = size === 'small' ? 0.72 : size === 'large' ? 1.32 : 1.0;
