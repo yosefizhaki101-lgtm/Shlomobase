@@ -352,10 +352,10 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   // Single unified frame block — one solid wall around the perimeter (3-layer total: panel + frame + slab)
   const wallT = 0.12;
 
-  // The frame's OUTER footprint must equal the grave size (W × L) — walls are built inward
-  // from the outer edge, so the frame never exceeds the requested width.
-  const innerW = Math.max(0.05, W - wallT * 2);
-  const innerL = Math.max(0.05, L - wallT * 2);
+  // The frame sits slightly inset on the base plate (2.5cm per side), so the thin
+  // polished base stays visible as a rim — and the frame never exceeds the grave width.
+  const innerW = Math.max(0.05, W - 0.05 - wallT * 2);
+  const innerL = Math.max(0.05, L - 0.05 - wallT * 2);
 
   // Smooth polished cap for rough frames — contrasts with the rugged exterior like the reference
   const capH = 0.018;
