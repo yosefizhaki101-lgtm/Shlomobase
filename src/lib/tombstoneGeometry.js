@@ -33,6 +33,20 @@ function getUploadedTexture(url) {
   return tex;
 }
 
+// Ornament artwork (line-art on white) drawn as an engraving: multiply blending
+// lets the white background disappear and the carved lines darken the stone.
+const ORNAMENT_TEX_CACHE = new Map();
+function ornamentTexture(url) {
+  let tex = ORNAMENT_TEX_CACHE.get(url);
+  if (!tex) {
+    tex = new THREE.TextureLoader().load(url);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    ORNAMENT_TEX_CACHE.set(url, tex);
+  }
+  return tex;
+}
+
 function stoneMat(stone, textureUrl) {
   // Uploaded texture from admin — use as diffuse map (tinted by stone color) with procedural normal map for surface detail
   if (textureUrl) {
@@ -1232,29 +1246,36 @@ export function buildTombstone(design, glbModels = null) {
     }
   }
 
-  // Custom element billboard (prompt-to-image) — positioned as engraving on headstone face
+  // Custom ornament (prompt-to-image) — engraved emblem anchored to the headstone face,
+  // at the top of the plaque where the name is inscribed (not floating on the slab).
   if (design.customImageUrl) {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load(design.customImageUrl);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const rearZ = -L * 0.38;
-    const hsD = 0.16;
-    const hsH = y - slabTopY;
-    const bbW = Math.min(W * 0.6, hsH * 0.7);
-    const bbH = bbW * 0.75;
-    const bbMat = new THREE.MeshStandardMaterial({
+    const tex = ornamentTexture(design.customImageUrl);
+    const bbMat = new THREE.MeshBasicMaterial({
       map: tex,
+      blending: THREE.MultiplyBlending,
       transparent: true,
-      alphaTest: 0.05,
-      roughness: 0.6,
-      metalness: 0,
+      depthWrite: false,
       side: THREE.DoubleSide,
       polygonOffset: true,
       polygonOffsetFactor: -4,
       polygonOffsetUnits: -4,
     });
+    // decalInfo holds the real plaque face position and size
+    const faceZ = decalInfo ? decalInfo.pos.z : -L * 0.38;
+    const plaqueX = decalInfo ? decalInfo.pos.x : 0;
+    const plaqueW = decalInfo ? decalInfo.size.x : W * 0.7;
+    const plaqueH = decalInfo ? decalInfo.size.y : Math.max(0.3, y - slabTopY);
+    const plaqueTop = decalInfo ? decalInfo.pos.y + plaqueH / 2 : y;
+    const bbW = Math.min(plaqueW * 0.42, plaqueH * 0.36);
+    const bbH = bbW;
     const bb = new THREE.Mesh(new THREE.PlaneGeometry(bbW, bbH), bbMat);
-    place(group, bb, new THREE.Vector3(0, slabTopY + hsH * 0.5, rearZ + hsD / 2 + 0.003), 'headstone');
+    if (design.headstonePlacement === 'lying' && decalInfo) {
+      // Headstone lies flat — the emblem is engraved on its top surface, toward the head end
+      bb.rotation.x = -Math.PI / 2;
+      place(group, bb, new THREE.Vector3(plaqueX, decalInfo.pos.y, decalInfo.pos.z - decalInfo.size.y * 0.3), 'headstone');
+    } else {
+      place(group, bb, new THREE.Vector3(plaqueX, plaqueTop - plaqueH * 0.05 - bbH / 2, faceZ), 'headstone');
+    }
   }
 
   if (decalInfo && design.engravingText) {

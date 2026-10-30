@@ -12,7 +12,7 @@ export default async function(req) {
       return Response.json({ error: 'Invalid prompt' }, { status: 400 });
     }
 
-    const fullPrompt = `Stone carving relief on a tombstone, elegant, monochrome stone texture, sculpted decoration: ${prompt}. Minimalist, dignified, memorial art style.`;
+    const fullPrompt = `Memorial stone-carving ornament, isolated graphic: ${prompt}. Drawn as a clean engraved line-art relief in dark grey carved lines, centered, front view, completely isolated on a pure white background. No tombstone, no stone texture, no plaque, no frame, no border, no lettering, no text, no shadow. Minimalist, dignified cemetery engraving art, high contrast, symmetrical.`;
     const res = await base44.asServiceRole.integrations.Core.GenerateImage({ prompt: fullPrompt });
     return Response.json({ url: res?.url || null });
   } catch (error) {
