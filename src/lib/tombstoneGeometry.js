@@ -35,15 +35,86 @@ function getUploadedTexture(url) {
 
 // Ornament artwork (line-art on white) drawn as an engraving: multiply blending
 // lets the white background disappear and the carved lines darken the stone.
+// Ornament artwork arrives as line-art on a white sheet. For engraving we throw the sheet
+// away: every near-white pixel becomes fully transparent and only the ink lines survive, so
+// the stone receives the etched drawing alone — no rectangular plate around it.
 const ORNAMENT_TEX_CACHE = new Map();
-function ornamentTexture(url) {
-  let tex = ORNAMENT_TEX_CACHE.get(url);
-  if (!tex) {
-    tex = new THREE.TextureLoader().load(url);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 8;
-    ORNAMENT_TEX_CACHE.set(url, tex);
+const ORNAMENT_SIZE = 1024;
+
+function ornamentInkCanvas(img) {
+  const size = ORNAMENT_SIZE;
+  const cv = document.createElement('canvas');
+  cv.width = size;
+  cv.height = size;
+  const ctx = cv.getContext('2d');
+  const scale = Math.min(size / img.width, size / img.height);
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  ctx.clearRect(0, 0, size, size);
+  ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+
+  let imageData;
+  try {
+    imageData = ctx.getImageData(0, 0, size, size);
+  } catch {
+    return null; // canvas tainted by a cross-origin image — no background removal possible
   }
+  const px = imageData.data;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 8) { px[i + 3] = 0; continue; }
+    const lum = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255;
+    // 0 on the white sheet, 1 on solid ink
+    const ink = Math.max(0, Math.min(1, (0.94 - lum) / 0.7));
+    px[i] = 32;
+    px[i + 1] = 29;
+    px[i + 2] = 26;
+    px[i + 3] = Math.round(Math.min(1, ink * 1.35) * 255); // punchy lines, clean sheet
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return cv;
+}
+
+function loadOrnamentImage(url) {
+  // fetch keeps the bytes same-origin-safe, so the canvas stays readable
+  return fetch(url, { mode: 'cors' })
+    .then((r) => r.blob())
+    .then((blob) => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = URL.createObjectURL(blob);
+    }))
+    .catch(() => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    }));
+}
+
+function ornamentTexture(url) {
+  let entry = ORNAMENT_TEX_CACHE.get(url);
+  if (entry) return entry.tex;
+  const cv = document.createElement('canvas');
+  cv.width = ORNAMENT_SIZE;
+  cv.height = ORNAMENT_SIZE;
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  ORNAMENT_TEX_CACHE.set(url, { tex, canvas: cv });
+
+  loadOrnamentImage(url)
+    .then((img) => {
+      const inked = ornamentInkCanvas(img);
+      if (!inked) return;
+      const ctx = cv.getContext('2d');
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.drawImage(inked, 0, 0);
+      tex.needsUpdate = true;
+    })
+    .catch(() => { /* unreachable artwork — the stone stays plain */ });
+
   return tex;
 }
 
@@ -1266,15 +1337,16 @@ export function buildTombstone(design, glbModels = null) {
   // at the top of the plaque where the name is inscribed (not floating on the slab).
   if (design.customImageUrl) {
     const tex = ornamentTexture(design.customImageUrl);
+    // The artwork is already stripped of its sheet (alpha = ink only), so a plain
+    // transparent pass draws the etched lines straight onto the stone.
     const bbMat = new THREE.MeshBasicMaterial({
       map: tex,
-      blending: THREE.MultiplyBlending,
       transparent: true,
       depthWrite: false,
       side: THREE.DoubleSide,
       polygonOffset: true,
-      polygonOffsetFactor: -4,
-      polygonOffsetUnits: -4,
+      polygonOffsetFactor: -6,
+      polygonOffsetUnits: -6,
     });
     // decalInfo holds the real plaque face position and size
     const faceZ = decalInfo ? decalInfo.pos.z : -L * 0.38;
@@ -1296,7 +1368,7 @@ export function buildTombstone(design, glbModels = null) {
       const pos0 = new THREE.Vector3(plaqueX, plaqueTop - plaqueH * 0.03 - bbH / 2, faceZ);
       place(group, new THREE.Mesh(bbGeo, bbMat), pos0, 'headstone');
       // Second, slightly offset pass — deepens the carved groove so the emblem reads as engraved
-      place(group, new THREE.Mesh(bbGeo, bbMat), pos0.clone().add(new THREE.Vector3(bbW * 0.014, -bbH * 0.014, -0.0012)), 'headstone');
+      place(group, new THREE.Mesh(bbGeo, bbMat), pos0.clone().add(new THREE.Vector3(bbW * 0.006, -bbH * 0.006, -0.001)), 'headstone');
     }
   }
 
