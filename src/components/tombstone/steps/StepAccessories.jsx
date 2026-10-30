@@ -75,7 +75,6 @@ export default function StepAccessories({ design, update }) {
       {selected.length > 0 && (
         <div className="space-y-2 pt-2 border-t border-stone-200">
           <h4 className="text-[11px] font-medium text-stone-700">מיקום תוספות</h4>
-          <p className="text-[10px] text-stone-500">גררו את הפריט ישירות בתצוגה התלת-ממדית, או כווננו כאן.</p>
           {selected.map((id, idx) => {
             const acc = ACCESSORIES.find((a) => a.id === id);
             if (!acc) return null;

@@ -6,7 +6,7 @@ import { buildTombstone, disposeGroup } from '@/lib/tombstoneGeometry';
 import { createCemeteryEnvironment, createDesignGround } from '@/lib/cemeteryEnvironment';
 import { loadGlbModels } from '@/lib/glbModelCache';
 
-const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, ref) => {
+const StonePreview = forwardRef(({ design, glbModels = [] }, ref) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const contentRef = useRef(null);
@@ -19,11 +19,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, re
   const glbMapRef = useRef(new Map());
   const modeRef = useRef('design');
   const renderCallbackRef = useRef(null);
-  const draggablesRef = useRef([]);
-  const onMoveRef = useRef(onAccessoryMove);
-  onMoveRef.current = onAccessoryMove;
-  const designRef = useRef(design);
-  designRef.current = design;
   const [glbReady, setGlbReady] = useState(0);
   const [exploded, setExploded] = useState(false);
   const [mode, setMode] = useState('design');
@@ -103,91 +98,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, re
     controls.target.set(0, 0.9, -0.1);
     controls.enablePan = false;
 
-    // ---- Drag accessories directly on the grave ----
-    const canvasEl = renderer.domElement;
-    const raycaster = new THREE.Raycaster();
-    const pointerNdc = new THREE.Vector2();
-    const dragPlane = new THREE.Plane();
-    const dragPoint = new THREE.Vector3();
-    const grabOffset = new THREE.Vector3();
-    let draggedNode = null;
-    let dragOrigin = null;
-
-    const updateNdc = (clientX, clientY) => {
-      const rect = canvasEl.getBoundingClientRect();
-      pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    };
-
-    const onDragMove = (event) => {
-      if (!draggedNode) return;
-      updateNdc(event.clientX, event.clientY);
-      raycaster.setFromCamera(pointerNdc, camera);
-      if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
-      const bounds = draggedNode.userData.bounds || { hw: 0.4, hl: 0.8 };
-      const nx = Math.max(-bounds.hw, Math.min(bounds.hw, dragPoint.x + grabOffset.x));
-      const nz = Math.max(-bounds.hl, Math.min(bounds.hl, dragPoint.z + grabOffset.z));
-      draggedNode.position.x = nx;
-      draggedNode.position.z = nz;
-      if (draggedNode.userData.rest) {
-        draggedNode.userData.rest.x = nx;
-        draggedNode.userData.rest.z = nz;
-      }
-    };
-
-    const onDragEnd = () => {
-      window.removeEventListener('pointermove', onDragMove);
-      window.removeEventListener('pointerup', onDragEnd);
-      window.removeEventListener('pointercancel', onDragEnd);
-      const node = draggedNode;
-      draggedNode = null;
-      canvasEl.style.cursor = '';
-      controls.enabled = true;
-      if (!node || !dragOrigin) return;
-      const dx = node.position.x - dragOrigin.x;
-      const dz = node.position.z - dragOrigin.z;
-      if (Math.abs(dx) > 0.004 || Math.abs(dz) > 0.004) {
-        onMoveRef.current?.(node.userData.accIndex, {
-          x: (dragOrigin.base.x || 0) + dx,
-          z: (dragOrigin.base.z || 0) + dz,
-        });
-      }
-    };
-
-    const onDragStart = (event) => {
-      const items = draggablesRef.current;
-      if (!items || items.length === 0) return;
-      updateNdc(event.clientX, event.clientY);
-      raycaster.setFromCamera(pointerNdc, camera);
-      const hits = raycaster.intersectObjects(items, true);
-      if (!hits.length) return;
-      let node = hits[0].object;
-      while (node && node.userData.accIndex === undefined) node = node.parent;
-      if (!node) return;
-      // Grabbed an accessory — take over the gesture so the camera does not orbit
-      event.stopPropagation();
-      event.preventDefault();
-      draggedNode = node;
-      controls.enabled = false;
-      dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), node.position);
-      if (raycaster.ray.intersectPlane(dragPlane, dragPoint)) {
-        grabOffset.set(node.position.x - dragPoint.x, 0, node.position.z - dragPoint.z);
-      } else {
-        grabOffset.set(0, 0, 0);
-      }
-      dragOrigin = {
-        x: node.position.x,
-        z: node.position.z,
-        base: { ...(((designRef.current?.accessoryPositions || {})[node.userData.accIndex]) || {}) },
-      };
-      canvasEl.style.cursor = 'grabbing';
-      window.addEventListener('pointermove', onDragMove);
-      window.addEventListener('pointerup', onDragEnd);
-      window.addEventListener('pointercancel', onDragEnd);
-    };
-
-    container.addEventListener('pointerdown', onDragStart, true);
-
     let frame;
     const animate = () => {
       frame = requestAnimationFrame(animate);
@@ -224,7 +134,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, re
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', onResize);
       ro.disconnect();
-      container.removeEventListener('pointerdown', onDragStart, true);
       controls.dispose();
       if (contentRef.current) {
         scene.remove(contentRef.current);
@@ -391,12 +300,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, re
     const group = buildTombstone(design, glbMapRef.current);
     contentRef.current = group;
     sceneRef.current.add(group);
-    // Accessory groups are draggable — collect them for picking
-    const draggables = [];
-    group.traverse((obj) => {
-      if (obj.userData && obj.userData.accIndex !== undefined) draggables.push(obj);
-    });
-    draggablesRef.current = draggables;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     design.stoneType,
@@ -435,11 +338,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, re
     design.panelHeightCm,
     JSON.stringify(design.accessoryPositions),
     design.frameHeightCm,
-    design.slabWidthCm,
-    design.slabHeightCm,
-    design.headstoneWidthCm,
-    design.headstoneHeightCm,
-    design.headstoneThicknessCm,
     design.headstoneTextScale,
     glbReady,
   ]);
