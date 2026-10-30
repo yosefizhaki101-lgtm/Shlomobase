@@ -116,6 +116,28 @@ export default function Builder() {
 
   const update = (patch) => setDesign((d) => ({ ...d, ...patch }));
 
+  // Drag on the model: commits the movement (in meters) to the matching position state
+  const handleItemDrag = (key, { dx, dz }) => {
+    const round = (v) => +v.toFixed(3);
+    if (key === 'ner') {
+      setDesign((d) => ({
+        ...d,
+        nerHouseOffsetX: round((d.nerHouseOffsetX || 0) + dx),
+        nerHouseOffsetZ: round((d.nerHouseOffsetZ || 0) + dz),
+      }));
+      return;
+    }
+    if (key && key.startsWith('acc:')) {
+      const idx = parseInt(key.split(':')[1], 10);
+      setDesign((d) => {
+        const positions = { ...(d.accessoryPositions || {}) };
+        const cur = positions[idx] || {};
+        positions[idx] = { x: round((cur.x || 0) + dx), z: round((cur.z || 0) + dz) };
+        return { ...d, accessoryPositions: positions };
+      });
+    }
+  };
+
   const handlePhotorealisticRender = async () => {
     setRendering(true);
     setRenderModal({ open: true, loading: true, imageUrl: null, error: null });
@@ -279,7 +301,7 @@ export default function Builder() {
         {/* Center canvas */}
         <main className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 min-h-0 relative">
-            <StonePreview ref={previewRef} design={designWithTextures} glbModels={glbModels} />
+            <StonePreview ref={previewRef} design={designWithTextures} glbModels={glbModels} onItemDrag={handleItemDrag} />
           </div>
           {/* Action bar */}
           <div className="flex-shrink-0 border-t border-stone-200 bg-white px-4 py-2 flex items-center justify-center gap-2">
@@ -328,7 +350,7 @@ export default function Builder() {
       <div className="flex lg:hidden flex-1 flex-col min-h-0">
         {/* 3D preview */}
         <div className="flex-shrink-0 h-[35dvh] min-h-[180px] max-h-[280px] relative border-b border-stone-200">
-          <StonePreview ref={previewRef} design={designWithTextures} />
+          <StonePreview ref={previewRef} design={designWithTextures} onItemDrag={handleItemDrag} />
         </div>
         {/* Mobile tabs */}
         <div className="flex-shrink-0 border-b border-stone-200 bg-white flex">

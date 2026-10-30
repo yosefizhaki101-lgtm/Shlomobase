@@ -6,7 +6,7 @@ import { buildTombstone, disposeGroup } from '@/lib/tombstoneGeometry';
 import { createCemeteryEnvironment, createDesignGround } from '@/lib/cemeteryEnvironment';
 import { loadGlbModels } from '@/lib/glbModelCache';
 
-const StonePreview = forwardRef(({ design, glbModels = [] }, ref) => {
+const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) => {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const contentRef = useRef(null);
@@ -19,6 +19,8 @@ const StonePreview = forwardRef(({ design, glbModels = [] }, ref) => {
   const glbMapRef = useRef(new Map());
   const modeRef = useRef('design');
   const renderCallbackRef = useRef(null);
+  const onItemDragRef = useRef(onItemDrag);
+  onItemDragRef.current = onItemDrag;
   const [glbReady, setGlbReady] = useState(0);
   const [exploded, setExploded] = useState(false);
   const [mode, setMode] = useState('design');
@@ -98,6 +100,94 @@ const StonePreview = forwardRef(({ design, glbModels = [] }, ref) => {
     controls.target.set(0, 0.9, -0.1);
     controls.enablePan = false;
 
+    // ---- Drag the small pieces (accessories, candle housing) directly on the model ----
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const dragPlane = new THREE.Plane();
+    const planeHit = new THREE.Vector3();
+    const canvas = renderer.domElement;
+    let drag = null;
+    let lastHover = 0;
+
+    const castPointer = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+    };
+
+    // Returns the draggable group under the pointer (walks up to the tagged ancestor)
+    const pickDraggable = (e) => {
+      if (!contentRef.current) return null;
+      castPointer(e);
+      const hits = raycaster.intersectObjects(contentRef.current.children, true);
+      for (let i = 0; i < hits.length; i++) {
+        let obj = hits[i].object;
+        while (obj && obj !== contentRef.current) {
+          if (obj.userData && obj.userData.dragKey) return { target: obj, point: hits[i].point };
+          obj = obj.parent;
+        }
+      }
+      return null;
+    };
+
+    const onDragStart = (e) => {
+      if (e.button !== 0) return;
+      const found = pickDraggable(e);
+      if (!found) return;
+      // Block OrbitControls for this gesture
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      controls.enabled = false;
+      dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), found.point);
+      drag = {
+        target: found.target,
+        base: found.target.position.clone(),
+        start: found.point.clone(),
+        key: found.target.userData.dragKey,
+      };
+      canvas.style.cursor = 'grabbing';
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* pointer no longer active */ }
+    };
+
+    const onDragMove = (e) => {
+      if (!drag) {
+        // Only hint with the cursor, throttled so raycasting stays cheap
+        const now = performance.now();
+        if (e.buttons === 0 && now - lastHover > 120) {
+          lastHover = now;
+          canvas.style.cursor = pickDraggable(e) ? 'grab' : '';
+        }
+        return;
+      }
+      e.stopImmediatePropagation();
+      castPointer(e);
+      if (raycaster.ray.intersectPlane(dragPlane, planeHit)) {
+        drag.target.position.x = drag.base.x + (planeHit.x - drag.start.x);
+        drag.target.position.z = drag.base.z + (planeHit.z - drag.start.z);
+      }
+    };
+
+    const onDragEnd = (e) => {
+      if (!drag) return;
+      const dx = drag.target.position.x - drag.base.x;
+      const dz = drag.target.position.z - drag.base.z;
+      const key = drag.key;
+      drag = null;
+      controls.enabled = true;
+      canvas.style.cursor = '';
+      if (canvas.releasePointerCapture && canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+      if (Math.abs(dx) > 0.004 || Math.abs(dz) > 0.004) {
+        onItemDragRef.current?.(key, { dx, dz });
+      }
+    };
+
+    canvas.addEventListener('pointerdown', onDragStart, true);
+    canvas.addEventListener('pointermove', onDragMove, true);
+    canvas.addEventListener('pointerup', onDragEnd, true);
+
     let frame;
     const animate = () => {
       frame = requestAnimationFrame(animate);
@@ -133,6 +223,9 @@ const StonePreview = forwardRef(({ design, glbModels = [] }, ref) => {
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', onResize);
+      canvas.removeEventListener('pointerdown', onDragStart, true);
+      canvas.removeEventListener('pointermove', onDragMove, true);
+      canvas.removeEventListener('pointerup', onDragEnd, true);
       ro.disconnect();
       controls.dispose();
       if (contentRef.current) {

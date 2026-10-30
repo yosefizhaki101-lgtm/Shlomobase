@@ -859,6 +859,7 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
     const customPos = accessoryPositions?.[idx];
     const offsetX = defaultX + (customPos?.x || 0);
     const frontZ = defaultFrontZ + (customPos?.z || 0);
+    const startIdx = group.children.length;
     switch (accId) {
       case 'candle_1':
       case 'candle_2':
@@ -1025,6 +1026,14 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
         break;
       }
       default: break;
+    }
+    // Group everything this accessory added so it can be dragged as one piece on the model
+    const added = group.children.slice(startIdx);
+    if (added.length) {
+      const wrap = new THREE.Group();
+      added.forEach((c) => { group.remove(c); wrap.add(c); });
+      wrap.userData.dragKey = `acc:${idx}`;
+      group.add(wrap);
     }
   });
 }
@@ -1198,6 +1207,7 @@ export function buildTombstone(design, glbModels = null) {
       // Free-standing candle house on the slab
       const ner = buildNerHouse(nerSize, nerStyle);
       ner.position.set(nerX, slabTopY, L * 0.30 + nerZ);
+      ner.userData.dragKey = 'ner';
       ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
       group.add(ner);
     } else if (design.headstonePlacement === 'lying') {
@@ -1206,6 +1216,7 @@ export function buildTombstone(design, glbModels = null) {
       const fp = getNerHouseFootprint(nerSize, nerStyle);
       const lyingLen = design.headstoneHeightCm ? design.headstoneHeightCm / 100 : W * 0.45;
       ner.position.set(nerX, slabTopY, -(L * 0.05) - lyingLen / 2 - fp.d / 2 - 0.02 + nerZ);
+      ner.userData.dragKey = 'ner';
       ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
       group.add(ner);
     } else {
@@ -1214,7 +1225,8 @@ export function buildTombstone(design, glbModels = null) {
       const housing = buildMountedCandleHousing(Math.min(0.30, Math.max(0.18, hsRise * 0.5)));
       housing.rotation.y = Math.PI; // door faces away from the headstone, into the rear
       const backZ = -L * 0.47 + (design.headstoneOffsetZ || 0);
-      housing.position.set(nerX, slabTopY + Math.max(0.04, hsRise * 0.16), backZ - 0.001);
+      housing.position.set(nerX, slabTopY + Math.max(0.04, hsRise * 0.16), backZ - 0.001 + nerZ);
+      housing.userData.dragKey = 'ner';
       housing.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
       group.add(housing);
     }
