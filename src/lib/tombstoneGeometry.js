@@ -832,16 +832,32 @@ function buildHeadstoneLying({ W, L, y, stone, def, group, textureUrl, scale = 1
       };
     }
     default: {
-      // Rectangular/slab headstone lying flat on the slab
-      const m = new THREE.Mesh(sharpGeo(hsW, hsThick, hsLen), mat);
+      // Rectangular/slab headstone lying on the slab, with a slight slope that
+      // runs down toward the inside of the grave (outer edge stays high).
+      const drop = Math.min(0.02, hsLen * 0.06);
+      const geo = new THREE.BoxGeometry(hsW, hsThick, hsLen, 1, 1, 6);
+      const geoPos = geo.attributes.position;
+      const gv = new THREE.Vector3();
+      for (let i = 0; i < geoPos.count; i++) {
+        gv.fromBufferAttribute(geoPos, i);
+        if (gv.y > 0) {
+          const t = (gv.z + hsLen / 2) / hsLen; // 0 at the outer edge, 1 toward the inside
+          gv.y = hsThick / 2 - drop * t;
+        }
+        geoPos.setXYZ(i, gv.x, gv.y, gv.z);
+      }
+      geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, mat);
       place(group, m, new THREE.Vector3(cx, y + hsThick / 2 + 0.002, centerZ), 'headstone');
       return {
         topY: y + hsThick,
         decal: {
           mesh: m,
-          pos: new THREE.Vector3(cx, y + hsThick + 0.05, centerZ),
+          pos: new THREE.Vector3(cx, y + hsThick - drop / 2 + 0.05, centerZ),
           look: new THREE.Vector3(cx, y - 0.05, centerZ),
           size: new THREE.Vector3(hsW * 0.85, hsLen * 0.85, 0.2),
+          slope: Math.atan(drop / hsLen),
+          surfaceAt: (z) => (y + hsThick) - drop * Math.min(1, Math.max(0, (z - centerZ + hsLen / 2) / hsLen)),
         },
       };
     }
@@ -1266,15 +1282,21 @@ export function buildTombstone(design, glbModels = null) {
     const plaqueW = decalInfo ? decalInfo.size.x : W * 0.7;
     const plaqueH = decalInfo ? decalInfo.size.y : Math.max(0.3, y - slabTopY);
     const plaqueTop = decalInfo ? decalInfo.pos.y + plaqueH / 2 : y;
-    const bbW = Math.min(plaqueW * 0.42, plaqueH * 0.36);
+    const bbW = Math.min(plaqueW * 0.8, plaqueH * 0.55);
     const bbH = bbW;
-    const bb = new THREE.Mesh(new THREE.PlaneGeometry(bbW, bbH), bbMat);
+    const bbGeo = new THREE.PlaneGeometry(bbW, bbH);
     if (design.headstonePlacement === 'lying' && decalInfo) {
-      // Headstone lies flat — the emblem is engraved on its top surface, toward the head end
-      bb.rotation.x = -Math.PI / 2;
-      place(group, bb, new THREE.Vector3(plaqueX, decalInfo.pos.y, decalInfo.pos.z - decalInfo.size.y * 0.3), 'headstone');
+      // Headstone lies flat — the emblem is engraved on its sloped top surface
+      const zOrn = decalInfo.pos.z - decalInfo.size.y * 0.3;
+      const yOrn = (decalInfo.surfaceAt ? decalInfo.surfaceAt(zOrn) : decalInfo.pos.y - 0.045) + 0.004;
+      const bb = new THREE.Mesh(bbGeo, bbMat);
+      bb.rotation.x = -Math.PI / 2 + (decalInfo.slope || 0);
+      place(group, bb, new THREE.Vector3(plaqueX, yOrn, zOrn), 'headstone');
     } else {
-      place(group, bb, new THREE.Vector3(plaqueX, plaqueTop - plaqueH * 0.05 - bbH / 2, faceZ), 'headstone');
+      const pos0 = new THREE.Vector3(plaqueX, plaqueTop - plaqueH * 0.03 - bbH / 2, faceZ);
+      place(group, new THREE.Mesh(bbGeo, bbMat), pos0, 'headstone');
+      // Second, slightly offset pass — deepens the carved groove so the emblem reads as engraved
+      place(group, new THREE.Mesh(bbGeo, bbMat), pos0.clone().add(new THREE.Vector3(bbW * 0.014, -bbH * 0.014, -0.0012)), 'headstone');
     }
   }
 
