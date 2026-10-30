@@ -27,14 +27,16 @@ const emptyDesign = {
   headstoneOffsetZ: 0,
   panelWidthCm: null,
   panelLengthCm: null,
-  panelHeightCm: null,
+  // Real grave proportions: 75cm footprint, 10cm bottom tier,
+  // 60cm top plate, 20cm thick.
+  panelHeightCm: 10,
   accessoryPositions: {},
   frameWidthCm: null,
   frameLengthCm: null,
   frameHeightCm: null,
-  slabWidthCm: null,
+  slabWidthCm: 60,
   slabLengthCm: null,
-  slabHeightCm: null,
+  slabHeightCm: 20,
   headstoneWidthCm: null,
   headstoneHeightCm: null,
   headstoneThicknessCm: null,
@@ -113,6 +115,13 @@ export default function Builder() {
   }, [design, stoneTypes, partTextures]);
 
   const update = (patch) => setDesign((d) => ({ ...d, ...patch }));
+
+  // Dragging an accessory in the 3D view persists its new offset
+  const moveAccessory = (index, pos) => setDesign((d) => {
+    const positions = { ...(d.accessoryPositions || {}) };
+    positions[index] = { ...(positions[index] || {}), ...pos };
+    return { ...d, accessoryPositions: positions };
+  });
 
   const handlePhotorealisticRender = async () => {
     setRendering(true);
@@ -273,7 +282,7 @@ export default function Builder() {
         {/* Center canvas */}
         <main className="flex-1 flex flex-col min-w-0">
           <div className="flex-1 min-h-0 relative">
-            <StonePreview ref={previewRef} design={designWithTextures} glbModels={glbModels} />
+            <StonePreview ref={previewRef} design={designWithTextures} glbModels={glbModels} onAccessoryMove={moveAccessory} />
           </div>
           {/* Action bar */}
           <div className="flex-shrink-0 border-t border-stone-200 bg-white px-4 py-2 flex items-center justify-center gap-2">
@@ -322,7 +331,7 @@ export default function Builder() {
       <div className="flex lg:hidden flex-1 flex-col min-h-0">
         {/* 3D preview */}
         <div className="flex-shrink-0 h-[35dvh] min-h-[180px] max-h-[280px] relative border-b border-stone-200">
-          <StonePreview ref={previewRef} design={designWithTextures} />
+          <StonePreview ref={previewRef} design={designWithTextures} onAccessoryMove={moveAccessory} />
         </div>
         {/* Mobile tabs */}
         <div className="flex-shrink-0 border-b border-stone-200 bg-white flex">

@@ -307,31 +307,33 @@ function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = nul
     W = Math.max(0.01, slabW - insetCm / 100);
     L = Math.max(0.01, slabL - insetCm / 100);
   }
+  // The panel tier defines the outer footprint — it is exactly W × L (no overhang),
+  // so the grave base measures the real width (e.g. 75cm) instead of growing outward.
   switch (def.geom) {
     case 'base_concrete':
-      place(group, new THREE.Mesh(sharpGeo(W + 0.2, h, L + 0.16), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
+      place(group, new THREE.Mesh(sharpGeo(W, h, L), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
     case 'base_double_tier':
-      place(group, new THREE.Mesh(sharpGeo(W + 0.2, h * 0.55, L + 0.12), mat), new THREE.Vector3(0, y + h * 0.27, 0), 'panel');
-      place(group, new THREE.Mesh(sharpGeo(W, h * 0.45, L + 0.05), mat), new THREE.Vector3(0, y + h * 0.77, 0), 'panel');
+      // Lower tier is the full footprint; the upper tier steps in by 5cm per side
+      place(group, new THREE.Mesh(sharpGeo(W, h * 0.55, L), mat), new THREE.Vector3(0, y + h * 0.27, 0), 'panel');
+      place(group, new THREE.Mesh(sharpGeo(W - 0.1, h * 0.45, L - 0.1), mat), new THREE.Vector3(0, y + h * 0.77, 0), 'panel');
       break;
     case 'base_beveled':
-      // Inset panels use exact W,L (already reduced above); regular panels widen by 0.2/0.12
-      place(group, new THREE.Mesh(sharpGeo(insetCm ? W : W + 0.2, h, insetCm ? L : L + 0.12), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
+      place(group, new THREE.Mesh(sharpGeo(W, h, L), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
     case 'base_tuvza':
-      place(group, new THREE.Mesh(rockGeo(W + 0.2, h, L + 0.12, 0.04, 23), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
+      place(group, new THREE.Mesh(rockGeo(W, h, L, 0.04, 23), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
     case 'base_glass_crystal': {
       // Stone base with embedded glass strip
-      place(group, new THREE.Mesh(sharpGeo(W + 0.2, h * 0.6, L + 0.12), mat), new THREE.Vector3(0, y + h * 0.3, 0), 'panel');
-      const glassStrip = new THREE.Mesh(sharpGeo(W + 0.15, h * 0.4, L + 0.08), glassMat());
+      place(group, new THREE.Mesh(sharpGeo(W, h * 0.6, L), mat), new THREE.Vector3(0, y + h * 0.3, 0), 'panel');
+      const glassStrip = new THREE.Mesh(sharpGeo(W - 0.05, h * 0.4, L - 0.04), glassMat());
       place(group, glassStrip, new THREE.Vector3(0, y + h * 0.8, 0), 'panel');
       break;
     }
     case 'base_single_tier':
     default:
-      place(group, new THREE.Mesh(sharpGeo(W + 0.2, h, L + 0.12), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
+      place(group, new THREE.Mesh(sharpGeo(W, h, L), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
   }
   return { topY: y + h };
@@ -350,8 +352,10 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   // Single unified frame block — one solid wall around the perimeter (3-layer total: panel + frame + slab)
   const wallT = 0.12;
 
-  const innerW = W * 0.88;
-  const innerL = L * 0.88;
+  // The frame's OUTER footprint must equal the grave size (W × L) — walls are built inward
+  // from the outer edge, so the frame never exceeds the requested width.
+  const innerW = Math.max(0.05, W - wallT * 2);
+  const innerL = Math.max(0.05, L - wallT * 2);
 
   // Smooth polished cap for rough frames — contrasts with the rugged exterior like the reference
   const capH = 0.018;
@@ -859,6 +863,9 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
     const customPos = accessoryPositions?.[idx];
     const offsetX = defaultX + (customPos?.x || 0);
     const frontZ = defaultFrontZ + (customPos?.z || 0);
+    // Everything this accessory builds is collected into its own group, so it can be
+    // dragged freely in the 3D view and moved as a single unit.
+    const firstChildIndex = group.children.length;
     switch (accId) {
       case 'candle_1':
       case 'candle_2':
@@ -1026,6 +1033,27 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
       }
       default: break;
     }
+
+    // Re-anchor the meshes created for this accessory into a draggable sub-group
+    const created = group.children.slice(firstChildIndex);
+    if (created.length === 0) return;
+    const anchor = new THREE.Vector3(offsetX, baseY, frontZ);
+    const accGroup = new THREE.Group();
+    created.forEach((mesh) => {
+      group.remove(mesh);
+      mesh.position.sub(anchor);
+      if (mesh.userData.rest) mesh.userData.rest.sub(anchor);
+      accGroup.add(mesh);
+    });
+    accGroup.position.copy(anchor);
+    accGroup.userData.rest = anchor.clone();
+    accGroup.userData.explodeOffset = new THREE.Vector3(0, STEP_LIFT.headstone || 0, 0);
+    accGroup.userData.accIndex = idx;
+    accGroup.userData.bounds = {
+      hw: Math.max(0.08, W / 2 - 0.12),
+      hl: Math.max(0.08, L / 2 - 0.12),
+    };
+    group.add(accGroup);
   });
 }
 
