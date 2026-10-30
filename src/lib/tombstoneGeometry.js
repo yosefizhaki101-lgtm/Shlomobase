@@ -350,7 +350,8 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   const isConnection = def.geom === 'wall_connection' || def.geom === 'wall_connection_rock';
 
   // Single unified frame block — one solid wall around the perimeter (3-layer total: panel + frame + slab)
-  const wallT = 0.12;
+  // Wall stone thickness 4.5cm (spec: 4-5cm).
+  const wallT = 0.045;
 
   // The frame sits slightly inset on the base plate (2.5cm per side), so the thin
   // polished base stays visible as a rim — and the frame never exceeds the grave width.
@@ -369,7 +370,7 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   // This is a standard construction feature visible in real grave frames: a thin black metal/stone
   // liner set inside the top perimeter of the stone walls.
   const trimH = 0.012;
-  const trimT = 0.055;
+  const trimT = 0.022;
   const trimMat = new THREE.MeshPhysicalMaterial({
     color: 0x050505,
     roughness: 0.08,
@@ -407,7 +408,7 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   // Black inner trim — sits on the inner edge of the wall top, inset from the outer face.
   // Creates the distinctive dark border visible inside the frame opening.
   const trimTopY = y + wallH + (capMat ? capH : 0) + trimH / 2;
-  const trimInset = 0.02; // inset from outer wall face
+  const trimInset = 0.008; // inset from outer wall face
   const trimW = innerW + (wallT - trimInset - trimT) * 2;
   const trimLen = innerL + (wallT - trimInset - trimT) * 2;
   // Front and back trim strips
@@ -1101,7 +1102,7 @@ export function buildTombstone(design, glbModels = null) {
   // Realistic grave proportions: 180cm length × 80cm width (ratio 2.25:1).
   // Family/double tombs are wider to span multiple graves side by side.
   const defaultW = 0.75;
-  const defaultL = isSmall ? 0.9 : (tt.id === 'family' || tt.id === 'reopen_family') ? 1.8 : 1.7;
+  const defaultL = isSmall ? 0.9 : (tt.id === 'family' || tt.id === 'reopen_family') ? 1.8 : 1.75;
   const W = design.panelWidthCm ? design.panelWidthCm / 100 : defaultW;
   const L = design.panelLengthCm ? design.panelLengthCm / 100 : defaultL;
 

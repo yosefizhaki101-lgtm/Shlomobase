@@ -437,6 +437,9 @@ const StonePreview = forwardRef(({ design, glbModels = [], onAccessoryMove }, re
     design.frameHeightCm,
     design.slabWidthCm,
     design.slabHeightCm,
+    design.headstoneWidthCm,
+    design.headstoneHeightCm,
+    design.headstoneThicknessCm,
     design.headstoneTextScale,
     glbReady,
   ]);
