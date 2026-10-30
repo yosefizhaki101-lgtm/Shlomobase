@@ -90,6 +90,8 @@ export default function ItemsEditor({ design, update }) {
             ))}
           </div>
 
+          <p className="text-[9px] text-stone-400">טיפ: אפשר לגרור את הפריט ישירות על המודל עם העכבר.</p>
+
           {active === 'headstone' && (
             <div className="space-y-2">
               <Slider
