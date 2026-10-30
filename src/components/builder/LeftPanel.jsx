@@ -126,7 +126,13 @@ export default function LeftPanel({ step, setStep, design, update }) {
         const stoneField = stoneFieldMap[step];
         const colorField = colorFieldMap[step];
         const selectedLayers = Array.isArray(design[field]) ? design[field] : [design[field]];
+        // Headstone (step 4) is a single choice — one style at a time
+        const isSingleChoice = step === 4;
         const toggleLayer = (id) => {
+          if (isSingleChoice) {
+            update({ [field]: [id] });
+            return;
+          }
           if (selectedLayers.includes(id)) {
             if (selectedLayers.length <= 1) return;
             update({ [field]: selectedLayers.filter((p) => p !== id) });
@@ -141,7 +147,7 @@ export default function LeftPanel({ step, setStep, design, update }) {
               selected={selectedLayers}
               onToggle={toggleLayer}
               onRemove={(id) => update({ [field]: selectedLayers.filter((p) => p !== id) })}
-              maxLayers={3}
+              maxLayers={step === 4 ? 1 : 3}
             />
             <div>
               <h4 className="text-[10px] font-medium text-stone-500 mb-1">חומר וצבע</h4>
