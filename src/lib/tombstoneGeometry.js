@@ -1092,6 +1092,10 @@ export function buildTombstone(design, glbModels = null) {
   // Panel layers — support multiple stacked panels (e.g., flooring + panel 10 + raise 5 black).
   // Layers stack from bottom to top in selection order.
   const panelLayers = Array.isArray(design.panel) ? design.panel : [design.panel];
+  // The top panel layer is built 2cm smaller than the slab above it — but only while the slab
+  // keeps its automatic dimensions. Once slab dimensions are set by hand, every layer keeps its
+  // own size so the cover plate can be resized on its own.
+  const slabDimsCustom = !!(design.slabWidthCm || design.slabLengthCm || design.slabHeightCm);
   for (let li = 0; li < panelLayers.length; li++) {
     const panelId = panelLayers[li];
     const pDef = PANELS.find((p) => p.id === panelId) || PANELS[0];
@@ -1099,7 +1103,7 @@ export function buildTombstone(design, glbModels = null) {
     const ch = isLast && design.panelHeightCm ? design.panelHeightCm / 100 : null;
     let panelGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'panel', optionId: panelId, stone: panelStone, y, textureUrl: design.panelTextureUrl });
     if (!panelGlbUsed) {
-      y = buildPanel({ ...ctx, y, stone: panelStone, def: pDef, textureUrl: design.panelTextureUrl, customHeight: ch, slabW, slabL, forceInsetCm: isLast ? 2 : 0 }).topY;
+      y = buildPanel({ ...ctx, y, stone: panelStone, def: pDef, textureUrl: design.panelTextureUrl, customHeight: ch, slabW, slabL, forceInsetCm: isLast && !slabDimsCustom ? 2 : 0 }).topY;
     } else {
       y += pDef.height || 0.15;
     }
