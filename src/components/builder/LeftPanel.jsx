@@ -6,6 +6,7 @@ import StepAccessories from '@/components/tombstone/steps/StepAccessories';
 import StepCustom from '@/components/tombstone/steps/StepCustom';
 import LayerSelector from '@/components/builder/LayerSelector';
 import DimensionEditor from '@/components/builder/DimensionEditor';
+import ItemsEditor from '@/components/builder/ItemsEditor';
 import PillCarousel from '@/components/tombstone/PillCarousel';
 
 const STEP_GROUPS = [
@@ -257,6 +258,8 @@ export default function LeftPanel({ step, setStep, design, update }) {
         <p className="text-[10px] text-stone-400 mb-3">{currentStep.desc}</p>
         {renderStepContent()}
       </div>
+      {/* Manual placement of the small pieces */}
+      <ItemsEditor design={design} update={update} />
       {/* Back / Continue buttons — pinned to bottom, always visible */}
       <div className="flex-shrink-0 border-t border-stone-200 bg-white p-2 flex gap-2">
         <button

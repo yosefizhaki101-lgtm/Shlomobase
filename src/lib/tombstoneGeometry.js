@@ -1188,10 +1188,12 @@ export function buildTombstone(design, glbModels = null) {
   if (design.nerHouse) {
     const nerSize = design.nerHouseSize || 'medium';
     const nerStyle = design.nerHouseStyle || 'arched';
+    const nerX = design.nerHouseOffsetX || 0;
+    const nerZ = design.nerHouseOffsetZ || 0;
     if (design.nerHouse === 'front') {
       // Free-standing candle house on the slab
       const ner = buildNerHouse(nerSize, nerStyle);
-      ner.position.set(0, slabTopY, L * 0.30);
+      ner.position.set(nerX, slabTopY, L * 0.30 + nerZ);
       ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
       group.add(ner);
     } else if (design.headstonePlacement === 'lying') {
@@ -1199,7 +1201,7 @@ export function buildTombstone(design, glbModels = null) {
       const ner = buildNerHouse(nerSize, nerStyle);
       const fp = getNerHouseFootprint(nerSize, nerStyle);
       const lyingLen = design.headstoneHeightCm ? design.headstoneHeightCm / 100 : W * 0.45;
-      ner.position.set(0, slabTopY, -(L * 0.05) - lyingLen / 2 - fp.d / 2 - 0.02);
+      ner.position.set(nerX, slabTopY, -(L * 0.05) - lyingLen / 2 - fp.d / 2 - 0.02 + nerZ);
       ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
       group.add(ner);
     } else {
@@ -1208,7 +1210,7 @@ export function buildTombstone(design, glbModels = null) {
       const housing = buildMountedCandleHousing(Math.min(0.30, Math.max(0.18, hsRise * 0.5)));
       housing.rotation.y = Math.PI; // door faces away from the headstone, into the rear
       const backZ = -L * 0.47 + (design.headstoneOffsetZ || 0);
-      housing.position.set(0, slabTopY + Math.max(0.04, hsRise * 0.16), backZ - 0.001);
+      housing.position.set(nerX, slabTopY + Math.max(0.04, hsRise * 0.16), backZ - 0.001);
       housing.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
       group.add(housing);
     }

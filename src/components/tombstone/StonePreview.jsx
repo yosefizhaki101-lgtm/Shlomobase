@@ -338,7 +338,18 @@ const StonePreview = forwardRef(({ design, glbModels = [] }, ref) => {
     design.panelHeightCm,
     JSON.stringify(design.accessoryPositions),
     design.frameHeightCm,
+    design.frameWidthCm,
+    design.frameLengthCm,
+    design.slabWidthCm,
+    design.slabLengthCm,
+    design.slabHeightCm,
+    design.headstoneWidthCm,
+    design.headstoneHeightCm,
+    design.headstoneThicknessCm,
     design.headstoneTextScale,
+    design.nerHouseStyle,
+    design.nerHouseOffsetX,
+    design.nerHouseOffsetZ,
     glbReady,
   ]);
 
