@@ -446,20 +446,6 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
     metalness: 0.02,
   }) : null;
 
-  // Black inner trim — thin polished black border on the inner top edge of the frame walls.
-  // This is a standard construction feature visible in real grave frames: a thin black metal/stone
-  // liner set inside the top perimeter of the stone walls.
-  const trimH = 0.012;
-  const trimT = 0.055;
-  const trimMat = new THREE.MeshPhysicalMaterial({
-    color: 0x050505,
-    roughness: 0.08,
-    metalness: 0.15,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.03,
-    envMapIntensity: 2.0,
-  });
-
   // Rock-pitched walls use rugged geometry; smooth walls use sharp-edged boxes
   const wallSideGeo = useRock
     ? rockWallGeo(wallT, wallH, innerL + wallT * 2, 0.05, 41)
@@ -485,21 +471,6 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
     }
   }
 
-  // Black inner trim — sits on the inner edge of the wall top, inset from the outer face.
-  // Creates the distinctive dark border visible inside the frame opening.
-  const trimTopY = y + wallH + (capMat ? capH : 0) + trimH / 2;
-  const trimInset = 0.02; // inset from outer wall face
-  const trimW = innerW + (wallT - trimInset - trimT) * 2;
-  const trimLen = innerL + (wallT - trimInset - trimT) * 2;
-  // Front and back trim strips
-  place(group, new THREE.Mesh(sharpGeo(trimW + trimT * 2, trimH, trimT), trimMat), new THREE.Vector3(0, trimTopY, innerL / 2 + wallT - trimT / 2 - trimInset), 'frame');
-  if (!isConnection) {
-    place(group, new THREE.Mesh(sharpGeo(trimW + trimT * 2, trimH, trimT), trimMat), new THREE.Vector3(0, trimTopY, -(innerL / 2 + wallT - trimT / 2 - trimInset)), 'frame');
-  }
-  // Side trim strips
-  place(group, new THREE.Mesh(sharpGeo(trimT, trimH, trimLen), trimMat), new THREE.Vector3(-(innerW / 2 + wallT - trimT / 2 - trimInset), trimTopY, 0), 'frame');
-  place(group, new THREE.Mesh(sharpGeo(trimT, trimH, trimLen), trimMat), new THREE.Vector3(innerW / 2 + wallT - trimT / 2 - trimInset, trimTopY, 0), 'frame');
-
   // Special: grooved horizontal lines on the frame
   if (def.geom === 'wall_grooved') {
     const gg = sharpGeo(innerW + wallT * 2, 0.02, wallT + 0.01);
@@ -518,7 +489,7 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
     place(group, new THREE.Mesh(smoothGeo(innerW, glassH, glassT, 0.005), glassMat()), new THREE.Vector3(0, y + glassH / 2, -(innerL / 2 + wallT / 2)), 'frame');
   }
 
-  return { topY: y + wallH + (capMat ? capH : 0) + trimH };
+  return { topY: y + wallH + (capMat ? capH : 0) };
 }
 
 function buildSlab({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null }) {
