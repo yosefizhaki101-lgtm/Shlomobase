@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_DIMENSIONS, PANELS, FRAMES, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
 import OptionCard from '@/components/builder/OptionCard';
@@ -15,8 +16,39 @@ const STEP_GROUPS = [
   { label: 'כיתוב ועיטורים', steps: [6, 7] },
 ];
 
+function FloorButton({ adding, onClick, label = 'הוסף קומה נוספת' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'w-full rounded-lg border px-2 py-1.5 text-[11px] font-medium transition-colors',
+        adding
+          ? 'border-stone-900 bg-stone-900 text-white'
+          : 'border-dashed border-stone-300 bg-white text-stone-600 hover:border-stone-500'
+      )}
+    >
+      {adding ? 'סיום הוספת קומות' : `+ ${label}`}
+    </button>
+  );
+}
+
+const REPLACE_HINT = 'בחירת פריט מחליפה את הקומה הקיימת. להוספת קומה נוספת לחצו על "הוסף קומה".';
+const ADD_HINT = 'לחצו על פריט כדי להוסיף אותו כקומה נוספת מעל הקיימות.';
+
 export default function LeftPanel({ step, setStep, design, update }) {
   const currentStep = STEPS[step];
+  const [addFloor, setAddFloor] = useState({ panel: false, frame: false });
+
+  // First pick replaces the existing floor; once "add floor" is on, picks stack another floor on top.
+  const pickLayer = (modeKey, field, id, current, max = 3) => {
+    if (addFloor[modeKey]) {
+      if (current.includes(id) || current.length >= max) return;
+      update({ [field]: [...current, id] });
+    } else {
+      update({ [field]: [id] });
+    }
+  };
 
   const renderStepContent = () => {
     switch (step) {
@@ -56,24 +88,18 @@ export default function LeftPanel({ step, setStep, design, update }) {
           </div>
         );
       case 1: {
-        const selectedPanels = Array.isArray(design.panel) ? design.panel : [design.panel];
-        const togglePanel = (id) => {
-          if (selectedPanels.includes(id)) {
-            if (selectedPanels.length <= 1) return;
-            update({ panel: selectedPanels.filter((p) => p !== id) });
-          } else {
-            update({ panel: [...selectedPanels, id] });
-          }
-        };
+        const selectedPanels = (Array.isArray(design.panel) ? design.panel : [design.panel]).filter(Boolean);
         return (
           <div className="space-y-3">
             <LayerSelector
               options={PANELS}
               selected={selectedPanels}
-              onToggle={togglePanel}
+              onToggle={(id) => pickLayer('panel', 'panel', id, selectedPanels)}
               onRemove={(id) => update({ panel: selectedPanels.filter((p) => p !== id) })}
               maxLayers={3}
+              hint={addFloor.panel ? ADD_HINT : REPLACE_HINT}
             />
+            <FloorButton adding={addFloor.panel} onClick={() => setAddFloor((s) => ({ ...s, panel: !s.panel }))} />
             <div>
               <h4 className="text-[10px] font-medium text-stone-500 mb-1">חומר וצבע</h4>
               <MaterialSelector
@@ -125,12 +151,18 @@ export default function LeftPanel({ step, setStep, design, update }) {
         const field = fieldMap[step];
         const stoneField = stoneFieldMap[step];
         const colorField = colorFieldMap[step];
-        const selectedLayers = Array.isArray(design[field]) ? design[field] : [design[field]];
+        const selectedLayers = (Array.isArray(design[field]) ? design[field] : [design[field]]).filter(Boolean);
         // Headstone (step 4) is a single choice — one style at a time
         const isSingleChoice = step === 4;
+        // Frame floors (step 2): first pick replaces, "add floor" stacks another one
+        const isFrameStep = step === 2;
         const toggleLayer = (id) => {
           if (isSingleChoice) {
             update({ [field]: [id] });
+            return;
+          }
+          if (isFrameStep) {
+            pickLayer('frame', 'frame', id, selectedLayers);
             return;
           }
           if (selectedLayers.includes(id)) {
@@ -148,7 +180,11 @@ export default function LeftPanel({ step, setStep, design, update }) {
               onToggle={toggleLayer}
               onRemove={(id) => update({ [field]: selectedLayers.filter((p) => p !== id) })}
               maxLayers={step === 4 ? 1 : 3}
+              hint={isFrameStep ? (addFloor.frame ? ADD_HINT : REPLACE_HINT) : null}
             />
+            {isFrameStep && (
+              <FloorButton adding={addFloor.frame} onClick={() => setAddFloor((s) => ({ ...s, frame: !s.frame }))} />
+            )}
             <div>
               <h4 className="text-[10px] font-medium text-stone-500 mb-1">חומר וצבע</h4>
               <MaterialSelector

@@ -686,7 +686,8 @@ function buildHeadstoneOne({ W, L, y, stone, def, group, xOff = 0, zOff = 0, tex
   switch (def.geom) {
     case 'headstone_dome_top': {
       const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.59 * scale));
-      place(group, new THREE.Mesh(sharpGeo(hsW, hsH, hsD), mat), new THREE.Vector3(cx, y + hsH / 2, rearZ), 'headstone');
+      const body = new THREE.Mesh(sharpGeo(hsW, hsH, hsD), mat);
+      place(group, body, new THREE.Vector3(cx, y + hsH / 2, rearZ), 'headstone');
       // Dome: half-circle extruded along Z — flat side down, curve up
       const dr = hsW / 2;
       const dShape = new THREE.Shape();
@@ -696,7 +697,7 @@ function buildHeadstoneOne({ W, L, y, stone, def, group, xOff = 0, zOff = 0, tex
       const dg = new THREE.ExtrudeGeometry(dShape, { depth: hsD, bevelEnabled: false });
       dg.translate(0, 0, -hsD / 2);
       place(group, new THREE.Mesh(dg, mat), new THREE.Vector3(cx, y + hsH, rearZ), 'headstone');
-      return decalResult(y + hsH + 0.15, new THREE.Mesh(smoothGeo(hsW, hsH, hsD), mat), rearZ, hsD, hsW, hsH);
+      return decalResult(y + hsH + 0.15, body, rearZ, hsD, hsW, hsH);
     }
     case 'headstone_flat_heart': {
       // Flat heart lying on the slab surface — like the reference image
@@ -948,6 +949,47 @@ function buildHeadstone({ W, L, y, stone, def, group, placement, textureUrl, sca
   return buildHeadstoneOne({ W, L, y, stone, def, group, textureUrl, scale, thickness, offsetX, offsetZ, customW, customH, customD });
 }
 
+// Memorial lantern: stone plinth, bronze frame with glass panels, pitched roof and warm candles.
+function buildLantern(group, x, y, z, slots = 1, heightScale = 1) {
+  const bronze = plainMat(0x3b3227, 0.34, 0.82);
+  const glass = glassMat(0x24304a, 0.2);
+  const plinthMat = new THREE.MeshStandardMaterial({ color: 0x24242a, roughness: 0.55, metalness: 0.15 });
+  const ledMat = new THREE.MeshStandardMaterial({ color: 0xffe0a8, emissive: 0xffab45, emissiveIntensity: 2.2, roughness: 0.4 });
+
+  const w = 0.11 + slots * 0.045;
+  const d = 0.13;
+  const bodyH = 0.21 * heightScale;
+  const plinthH = 0.028;
+  const baseY = y + plinthH;
+
+  // Stone plinth and bronze base plate
+  place(group, new THREE.Mesh(sharpGeo(w + 0.05, plinthH, d + 0.05), plinthMat), new THREE.Vector3(x, y + plinthH / 2, z), 'headstone');
+  place(group, new THREE.Mesh(sharpGeo(w + 0.016, 0.014, d + 0.016), bronze), new THREE.Vector3(x, baseY + 0.007, z), 'headstone');
+
+  // Glass body with four bronze corner posts
+  const bodyBottom = baseY + 0.014;
+  place(group, new THREE.Mesh(sharpGeo(w, bodyH, d), glass), new THREE.Vector3(x, bodyBottom + bodyH / 2, z), 'headstone');
+  const postT = 0.011;
+  const postY = bodyBottom + bodyH / 2;
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+    place(group, new THREE.Mesh(sharpGeo(postT, bodyH, postT), bronze), new THREE.Vector3(x + sx * (w / 2), postY, z + sz * (d / 2)), 'headstone');
+  });
+
+  // Top plate, pitched bronze roof and finial
+  const topY = bodyBottom + bodyH;
+  place(group, new THREE.Mesh(sharpGeo(w + 0.02, 0.012, d + 0.02), bronze), new THREE.Vector3(x, topY + 0.006, z), 'headstone');
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(w, d) * 0.56, 0.055, 4), bronze);
+  roof.rotation.y = Math.PI / 4;
+  place(group, roof, new THREE.Vector3(x, topY + 0.039, z), 'headstone');
+  place(group, new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), bronze), new THREE.Vector3(x, topY + 0.073, z), 'headstone');
+
+  // Candles inside the glass
+  for (let i = 0; i < slots; i++) {
+    const cx = x + (i - (slots - 1) / 2) * (w / (slots + 0.2));
+    place(group, new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.05, 10), ledMat), new THREE.Vector3(cx, bodyBottom + 0.03, z), 'headstone');
+  }
+}
+
 function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, group }) {
   if (!accessories || accessories.length === 0) return;
   const mat = stoneMat(stone);
@@ -966,18 +1008,7 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
       case 'candle_2':
       case 'candle_3': {
         const n = accId === 'candle_1' ? 1 : accId === 'candle_2' ? 2 : 3;
-        const lw = 0.1 + n * 0.04;
-        const lanternH = 0.20 + n * 0.03;
-        const metalDark = plainMat(0x2a2a2e, 0.4, 0.7);
-        // Dark metal base
-        place(group, new THREE.Mesh(smoothGeo(lw, 0.04, lw, 0.01), metalDark), new THREE.Vector3(offsetX, baseY + 0.02, frontZ), 'headstone');
-        // Glass body
-        place(group, new THREE.Mesh(smoothGeo(lw - 0.02, lanternH, lw - 0.02, 0.005), glassMat(0x1a1a2e, 0.35)), new THREE.Vector3(offsetX, baseY + 0.04 + lanternH / 2, frontZ), 'headstone');
-        // Metal top
-        place(group, new THREE.Mesh(smoothGeo(lw, 0.03, lw, 0.01), metalDark), new THREE.Vector3(offsetX, baseY + 0.04 + lanternH + 0.015, frontZ), 'headstone');
-        // LED candle inside (warm glow)
-        const ledMat = new THREE.MeshStandardMaterial({ color: 0xffcc66, emissive: 0xff9933, emissiveIntensity: 2.5 });
-        place(group, new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.04, 8), ledMat), new THREE.Vector3(offsetX, baseY + 0.08, frontZ), 'headstone');
+        buildLantern(group, offsetX, baseY, frontZ, n);
         break;
       }
       case 'planter': {
@@ -988,8 +1019,7 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
         break;
       }
       case 'candle_special':
-        place(group, new THREE.Mesh(smoothGeo(0.18, 0.25, 0.15, 0.03), mat), new THREE.Vector3(offsetX, baseY + 0.125, frontZ), 'headstone');
-        place(group, new THREE.Mesh(smoothGeo(0.16, 0.3, 0.13, 0.005), glassMat(0x223344, 0.3)), new THREE.Vector3(offsetX, baseY + 0.4, frontZ), 'headstone');
+        buildLantern(group, offsetX, baseY, frontZ, 2, 1.3);
         break;
       case 'candle_solar':
       case 'candle_solar_combo': {
@@ -1117,13 +1147,8 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
       case 'candle_2_medium_2':
       case 'candle_2_3': {
         const n = accId === 'candle_2_3' ? 3 : 2;
-        const lw = 0.1 + n * 0.05;
-        const off1 = offsetX - 0.18;
-        const off2 = offsetX + 0.18;
-        place(group, new THREE.Mesh(smoothGeo(lw, 0.15, 0.12, 0.01), mat), new THREE.Vector3(off1, baseY + 0.075, frontZ), 'headstone');
-        place(group, new THREE.Mesh(smoothGeo(lw - 0.02, 0.2, 0.1, 0.005), glassMat(0x223344, 0.3)), new THREE.Vector3(off1, baseY + 0.25, frontZ), 'headstone');
-        place(group, new THREE.Mesh(smoothGeo(lw, 0.15, 0.12, 0.01), mat), new THREE.Vector3(off2, baseY + 0.075, frontZ), 'headstone');
-        place(group, new THREE.Mesh(smoothGeo(lw - 0.02, 0.2, 0.1, 0.005), glassMat(0x223344, 0.3)), new THREE.Vector3(off2, baseY + 0.25, frontZ), 'headstone');
+        buildLantern(group, offsetX - 0.19, baseY, frontZ, n);
+        buildLantern(group, offsetX + 0.19, baseY, frontZ, n);
         break;
       }
       default: break;
@@ -1182,14 +1207,18 @@ export function buildTombstone(design, glbModels = null) {
   const isSmall = tt.id === 'small';
   // Realistic grave proportions: 180cm length × 80cm width (ratio 2.25:1).
   // Family/double tombs are wider to span multiple graves side by side.
-  const defaultW = 0.75;
-  const defaultL = isSmall ? 0.9 : (tt.id === 'family' || tt.id === 'reopen_family') ? 1.8 : 1.7;
+  const isWide = tt.id === 'family' || tt.id === 'double' || tt.id === 'reopen_family';
+  const defaultW = isWide ? 1.5 : 0.75;
+  const defaultL = isSmall ? 0.9 : isWide ? 1.85 : 1.7;
   const W = design.panelWidthCm ? design.panelWidthCm / 100 : defaultW;
   const L = design.panelLengthCm ? design.panelLengthCm / 100 : defaultL;
 
-  const frameDef = FRAMES.find((f) => f.id === design.frame) || FRAMES[0];
-  const slabDef = SLABS.find((s) => s.id === design.slab) || SLABS[0];
-  const hsDef = HEADSTONE_TOPS.find((h) => h.id === design.headstoneTop) || HEADSTONE_TOPS[0];
+  const firstOf = (v) => (Array.isArray(v) ? v[0] : v);
+  const frameDef = FRAMES.find((f) => f.id === firstOf(design.frame)) || FRAMES[0];
+  const slabDef = SLABS.find((s) => s.id === firstOf(design.slab)) || SLABS[0];
+  const hsDef = HEADSTONE_TOPS.find((h) => h.id === firstOf(design.headstoneTop)) || HEADSTONE_TOPS[0];
+  // A material or colour the user picked for a part wins over the colour baked into the option itself.
+  const withUserColor = (def, userPicked) => (userPicked ? { ...def, overrideColor: undefined } : def);
 
   const ctx = { W, L, group };
   // Effective slab dimensions (for inset panels that need to be 2cm smaller than the slab)
@@ -1208,7 +1237,7 @@ export function buildTombstone(design, glbModels = null) {
   const slabDimsCustom = !!(design.slabWidthCm || design.slabLengthCm || design.slabHeightCm);
   for (let li = 0; li < panelLayers.length; li++) {
     const panelId = panelLayers[li];
-    const pDef = PANELS.find((p) => p.id === panelId) || PANELS[0];
+    const pDef = withUserColor(PANELS.find((p) => p.id === panelId) || PANELS[0], design.panelStone || design.panelColor);
     const isLast = li === panelLayers.length - 1;
     const ch = isLast && design.panelHeightCm ? design.panelHeightCm / 100 : null;
     let panelGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'panel', optionId: panelId, stone: panelStone, y, textureUrl: design.panelTextureUrl });
@@ -1223,7 +1252,7 @@ export function buildTombstone(design, glbModels = null) {
   const frameLayers = Array.isArray(design.frame) ? design.frame : [design.frame];
   for (let fi = 0; fi < frameLayers.length; fi++) {
     const frameId = frameLayers[fi];
-    const fDef = FRAMES.find((f) => f.id === frameId) || FRAMES[0];
+    const fDef = withUserColor(FRAMES.find((f) => f.id === frameId) || FRAMES[0], design.frameStone || design.frameColor);
     const isLast = fi === frameLayers.length - 1;
     const fh = isLast && design.frameHeightCm ? design.frameHeightCm / 100 : null;
     let frameGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'frame', optionId: frameId, stone: frameStone, y, textureUrl: design.frameTextureUrl });
@@ -1238,7 +1267,7 @@ export function buildTombstone(design, glbModels = null) {
   const slabLayers = Array.isArray(design.slab) ? design.slab : [design.slab];
   for (let si = 0; si < slabLayers.length; si++) {
     const slabId = slabLayers[si];
-    const sDef = SLABS.find((s) => s.id === slabId) || SLABS[0];
+    const sDef = withUserColor(SLABS.find((s) => s.id === slabId) || SLABS[0], design.slabStone || design.slabColor);
     const isLast = si === slabLayers.length - 1;
     const sh = isLast && design.slabHeightCm ? design.slabHeightCm / 100 : null;
     let slabGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'slab', optionId: slabId, stone: slabStone, y, textureUrl: design.slabTextureUrl });

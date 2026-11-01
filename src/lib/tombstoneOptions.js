@@ -1,13 +1,13 @@
 export const COLORS = [
   { id: 'white', name: 'לבן', hex: '#ffffff', swatch: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)' },
-  { id: 'light_grey', name: 'טורקי', hex: '#EAEAEA', swatch: 'linear-gradient(135deg, #F0F0F0 0%, #E0E0E0 100%)' },
-  { id: 'grey', name: 'סרדו', hex: '#8a8a8a', swatch: 'linear-gradient(135deg, #9a9a9a 0%, #7a7a7a 100%)' },
+  { id: 'light_grey', name: 'טורקי', hex: '#C9CFD6', swatch: 'linear-gradient(135deg, #E4E8EC 0%, #B7BEC6 100%)' },
+  { id: 'grey', name: 'סרדו', hex: '#9B9C9E', swatch: 'linear-gradient(135deg, #ABABAD 0%, #84868A 100%)' },
   { id: 'dark_grey', name: 'אפור כהה', hex: '#5d6364', swatch: 'linear-gradient(135deg, #6d7374 0%, #4d5354 100%)' },
   { id: 'black', name: 'שחור', hex: '#0a0a0a', swatch: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)' },
-  { id: 'red', name: 'אדום', hex: '#7a1a1a', swatch: 'linear-gradient(135deg, #8b2020 0%, #5a1414 100%)' },
-  { id: 'blue', name: 'כחול', hex: '#1a1d21', swatch: 'linear-gradient(135deg, #2a2d33 0%, #1a1d21 100%)' },
-  { id: 'beige', name: 'חלילה', hex: '#DCD6D1', swatch: 'linear-gradient(135deg, #E8E4E1 0%, #D0CAC5 100%)' },
-  { id: 'warm_beige', name: 'חברון', hex: '#E8E4E1', swatch: 'linear-gradient(135deg, #F0EDE8 0%, #E0DCD8 100%)' },
+  { id: 'red', name: 'אדום', hex: '#6F2024', swatch: 'linear-gradient(135deg, #7E2528 0%, #541418 100%)' },
+  { id: 'blue', name: 'כחול', hex: '#33404F', swatch: 'linear-gradient(135deg, #3E4C5C 0%, #26303C 100%)' },
+  { id: 'beige', name: 'חלילה', hex: '#C8A250', swatch: 'linear-gradient(135deg, #D9B463 0%, #B08A3C 100%)' },
+  { id: 'warm_beige', name: 'חברון', hex: '#E6DFCE', swatch: 'linear-gradient(135deg, #EFE9DA 0%, #D6CDB6 100%)' },
 ];
 
 export const STONE_TYPES = [
@@ -27,10 +27,10 @@ export const STONE_TYPES = [
   {
     id: 'turkish_marble',
     name: 'טורקי',
-    desc: 'שיש טורקי בגוון בז׳ עם ורידים חומים עדינים',
-    swatch: 'linear-gradient(135deg, #D9C4A6 0%, #B99C79 100%)',
-    kind: 'turkish_tan',
-    color: '#C9AE8A',
+    desc: 'שיש טורקי אפור עננים - גוון בהיר קריר עם עננות עדינה',
+    swatch: 'linear-gradient(135deg, #E4E8EC 0%, #B7BEC6 100%)',
+    kind: 'cloud_grey',
+    color: '#C9CFD6',
     roughness: 0.3,
     metalness: 0.02,
     polish: 0.75,
@@ -119,8 +119,8 @@ export const STONE_TYPES = [
 export const TOMBSTONE_DIMENSIONS = {
   small:          { width: 75, length: 90,  maxHeight: 90  },
   regular:        { width: 75, length: 170, maxHeight: 90  },
-  family:         { width: 75, length: 180, maxHeight: 90  },
-  double:         { width: 75, length: 180, maxHeight: 90  },
+  family:         { width: 150, length: 180, maxHeight: 90  },
+  double:         { width: 150, length: 190, maxHeight: 90  },
   custom:         { width: 75, length: 170, maxHeight: 90  },
   reopen_family:  { width: 75, length: 180, maxHeight: 90  },
   reopen_living:  { width: 75, length: 170, maxHeight: 90  },

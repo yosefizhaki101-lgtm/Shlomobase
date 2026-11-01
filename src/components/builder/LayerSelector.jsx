@@ -2,7 +2,7 @@ import OptionCard from '@/components/builder/OptionCard';
 
 // Multi-select layer list: shows selected layers (stacked bottom→top) with remove buttons,
 // plus the available options grid to add more layers (up to maxLayers).
-export default function LayerSelector({ options, selected, onToggle, onRemove, maxLayers = 3, emptyLabel = 'בחרו פריט' }) {
+export default function LayerSelector({ options, selected, onToggle, onRemove, maxLayers = 3, emptyLabel = 'בחרו פריט', hint = null }) {
   const single = maxLayers === 1;
   const selectedDefs = selected.map((id) => options.find((o) => o.id === id)).filter(Boolean);
   const atMax = selected.length >= maxLayers;
@@ -11,7 +11,7 @@ export default function LayerSelector({ options, selected, onToggle, onRemove, m
     <div>
       <h4 className="text-[10px] font-medium text-stone-500 mb-1">{single ? 'בחירת סגנון' : 'שכבות (מלמטה למעלה)'}</h4>
       <p className="text-[9px] text-stone-400 mb-1.5">
-        {single ? 'בחרו סגנון אחד.' : `בחרו עד ${maxLayers} שכבות שמוערמות זו על זו. הסדר הוא מלמטה למעלה.`}
+        {hint || (single ? 'בחרו סגנון אחד.' : `בחרו עד ${maxLayers} שכבות שמוערמות זו על זו. הסדר הוא מלמטה למעלה.`)}
       </p>
       {!single && selectedDefs.length > 0 && (
         <div className="mb-2 space-y-1">

@@ -461,6 +461,7 @@ const PRESETS = {
   marble: { flowingMarble: true, veinMix: 0.6, veinColor: [140, 135, 125], veinColor2: [110, 105, 95], veinColor3: [80, 75, 68], baseVar: 0.05, roughBase: 0.72, roughVar: 0.18, nStr: 0.4, repeat: 1 },
   turkish_grey: { ridged: false, noiseScale: 6, octaves: 3, banded: true, baseVar: 0.05, roughBase: 0.35, roughVar: 0.15, nStr: 0.3, linearVeins: true, repeat: 1 },
   turkish_tan: { flowingMarble: true, lightVeins: true, veinMix: 0.32, veinColor: [150, 126, 96], baseVar: 0.1, roughBase: 0.3, roughVar: 0.12, nStr: 0.35, flecks: true, repeat: 1 },
+  cloud_grey: { flowingMarble: true, lightVeins: true, veinMix: 0.26, veinColor: [168, 175, 183], baseVar: 0.07, roughBase: 0.3, roughVar: 0.1, nStr: 0.3, flecks: true, repeat: 1 },
   pure_white_marble: { ridged: false, noiseScale: 6, octaves: 3, baseVar: 0.05, roughBase: 0.05, roughVar: 0.04, nStr: 0.15, repeat: 1, flecks: true },
   black_marble: { ridged: true, noiseScale: 14, octaves: 5, veinMix: 0.78, veinColor: [180, 175, 168], baseVar: 0.06, roughBase: 0.2, roughVar: 0.1, nStr: 0.7, flecks: true },
   mirror_black: { ridged: false, noiseScale: 18, octaves: 4, baseVar: 0.12, roughBase: 0.03, roughVar: 0.04, nStr: 0.22, flecks: true, crystalline: true },
