@@ -12,6 +12,10 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

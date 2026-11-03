@@ -1,11 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { ensureValidCode, findValidCode, sha256Hex } from '../../shared/accessGate.ts';
+import { ensureValidCode, findValidCode, sha256Hex, MAX_ATTEMPTS } from '../../shared/accessGate.ts';
 
+// Public by design (the app is open without login): the emailed code is the credential.
+// Wrong guesses are capped per ten-minute window so the code cannot be brute-forced.
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { code } = await req.json().catch(() => ({}));
     const submitted = String(code || '').replace(/\D/g, '');
@@ -24,8 +25,18 @@ export default async function (req) {
       });
     }
 
+    const isAdmin = user && user.role === 'admin';
+    if (!isAdmin && (current.attempts || 0) >= MAX_ATTEMPTS) {
+      return Response.json({ unlocked: false, reason: 'throttled' });
+    }
+
     const submittedHash = await sha256Hex(submitted);
     if (submittedHash !== current.code_hash) {
+      if (!isAdmin) {
+        await base44.asServiceRole.entities.AccessCode.update(current.id, {
+          attempts: (current.attempts || 0) + 1,
+        });
+      }
       return Response.json({ unlocked: false, reason: 'invalid' });
     }
 

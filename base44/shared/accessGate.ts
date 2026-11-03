@@ -5,6 +5,9 @@
 
 export const WINDOW_MS = 10 * 60 * 1000;
 
+// Wrong guesses allowed per window, so a six-digit code can't be brute-forced.
+export const MAX_ATTEMPTS = 8;
+
 export function generateCode() {
   const digits = new Uint32Array(1);
   crypto.getRandomValues(digits);

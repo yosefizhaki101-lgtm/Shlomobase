@@ -1,12 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { ensureValidCode, sha256Hex } from '../../shared/accessGate.ts';
 
+// Public by design: the app itself is open without login, so a visitor must be
+// able to reach the lock screen. No code value is ever returned.
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
     const { token } = await req.json().catch(() => ({}));
 
     if (token) {
