@@ -7,7 +7,6 @@ import { REFERENCE_TOMBSTONE_PHOTOS } from '@/lib/renderReferences';
 import { cn } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 import StonePreview from '@/components/tombstone/StonePreview';
-import Logo from '@/components/tombstone/Logo';
 import LeftPanel from '@/components/builder/LeftPanel';
 import RightPanel from '@/components/builder/RightPanel';
 import RenderModal from '@/components/builder/RenderModal';
@@ -186,7 +185,7 @@ export default function Builder() {
     if (dataUrl) {
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = 'לגזיאל-עיצוב-מצבה.png';
+      a.download = 'עיצוב-מצבה.png';
       a.click();
     }
     const stone = STONE_TYPES.find((s) => s.id === design.stoneType);
@@ -198,8 +197,8 @@ export default function Builder() {
       design.contactPhone && `טלפון: ${design.contactPhone}`,
       design.showPrice !== false && `הערכת מחיר: ${price.withVat} ₪`,
     ].filter(Boolean).join('\n');
-    const msg = encodeURIComponent(`שלום לגזיאל,\nעיצבתי מצבה דרך האתר.\n\n${lines}\n\nמצרף/ת תמונה של העיצוב.`);
-    window.open(`https://wa.me/972505779173?text=${msg}`, '_blank');
+    const msg = encodeURIComponent(`שלום,\nעיצבתי מצבה דרך האתר.\n\n${lines}\n\nמצרף/ת תמונה של העיצוב.`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
   };
 
   const submit = async () => {
@@ -278,11 +277,7 @@ export default function Builder() {
       <header className="flex-shrink-0 border-b border-stone-200 bg-white">
         <div className="px-3 py-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Logo className="h-8 sm:h-10" />
-            <div className="hidden sm:block">
-              <h1 className="font-serif text-sm leading-tight">מערכת הדמיית מצבות</h1>
-              <a href="tel:0505779173" className="text-[10px] text-stone-500" dir="ltr">050-5779173</a>
-            </div>
+            <h1 className="font-serif text-sm leading-tight">מערכת הדמיית מצבות</h1>
           </div>
           <div className="flex items-center gap-3">
             <a href="/catalog" className="text-xs font-medium text-stone-600 hover:text-stone-900">קטלוג</a>

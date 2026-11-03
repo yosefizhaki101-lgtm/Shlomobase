@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { RefreshCw, Loader2, ImageIcon, Sparkles, Tag } from 'lucide-react';
 import { Image as UIImage } from '@/components/ui/image';
 import CatalogLightbox from '@/components/catalog/CatalogLightbox';
-import Logo from '@/components/tombstone/Logo';
 import { CATALOG_CATEGORIES } from '@/lib/tombstoneOptions';
 import { cn } from '@/lib/utils';
 
@@ -71,9 +70,6 @@ export default function Catalog() {
       <header className="relative overflow-hidden bg-gradient-to-bl from-stone-900 via-stone-800 to-stone-700 text-white">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0%, transparent 40%)' }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-          <div className="mb-8 inline-flex rounded-xl bg-white p-2 shadow-lg">
-            <Logo className="h-16 sm:h-20" />
-          </div>
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-stone-300 hover:text-white transition-colors mb-8">
             <Sparkles className="h-4 w-4" />
             חזרה לבניית מצבה

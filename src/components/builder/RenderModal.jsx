@@ -16,7 +16,7 @@ export default function RenderModal({ open, loading, imageUrl, error, onClose })
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'לגזיאל-רנדור-מצבה.png';
+      a.download = 'רנדור-מצבה.png';
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
