@@ -148,7 +148,9 @@ function stoneMat(stone, textureUrl) {
   const isMirror = stone.polish >= 0.95;
   if (isMirror) {
     return new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
+      // Deep, saturated body colour (jet black for black granite) — the polished
+      // highlights come from the clearcoat/environment reflections, not from the diffuse
+      color: new THREE.Color(stone.color || '#ffffff'),
       map: t.map,
       normalMap: t.normalMap,
       normalScale: new THREE.Vector2(t.nStr * 1.6, t.nStr * 1.6),
