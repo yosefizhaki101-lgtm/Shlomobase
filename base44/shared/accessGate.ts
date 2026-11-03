@@ -54,6 +54,11 @@ async function sendCodeEmail(base44, code, expiresAt) {
     )
   );
 
+  const summary = results.map((r) =>
+    r.status === 'fulfilled' ? r.value : { error: String(r.reason && r.reason.message ? r.reason.message : r.reason) }
+  );
+  console.log('access code email results', JSON.stringify(summary));
+
   return results.some((r) => r.status === 'fulfilled' && r.value && r.value.success !== false);
 }
 
