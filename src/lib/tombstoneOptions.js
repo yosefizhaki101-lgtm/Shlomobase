@@ -6,7 +6,7 @@ export const COLORS = [
   { id: 'black', name: 'שחור', hex: '#0a0a0a', swatch: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)' },
   { id: 'red', name: 'אדום', hex: '#6F2024', swatch: 'linear-gradient(135deg, #7E2528 0%, #541418 100%)' },
   { id: 'blue', name: 'כחול', hex: '#33404F', swatch: 'linear-gradient(135deg, #3E4C5C 0%, #26303C 100%)' },
-  { id: 'beige', name: 'חלילה', hex: '#C8A250', swatch: 'linear-gradient(135deg, #D9B463 0%, #B08A3C 100%)' },
+  { id: 'beige', name: 'חלילה', hex: '#D9CCB4', swatch: 'linear-gradient(135deg, #E7DCC8 0%, #CBBBA0 100%)' },
   { id: 'warm_beige', name: 'חברון', hex: '#E6DFCE', swatch: 'linear-gradient(135deg, #EFE9DA 0%, #D6CDB6 100%)' },
 ];
 
@@ -49,13 +49,13 @@ export const STONE_TYPES = [
   {
     id: 'halila',
     name: 'חלילה',
-    desc: 'שיש חלילה - אוכרה צהוב חם עם מאובנים',
-    swatch: 'linear-gradient(135deg, #D9B463 0%, #B08A3C 100%)',
+    desc: 'אבן חלילה - בז\' בהיר חם, גוון גירי מאט',
+    swatch: 'linear-gradient(135deg, #E7DCC8 0%, #CBBBA0 100%)',
     kind: 'halila',
-    color: '#C8A250',
-    roughness: 0.6,
-    metalness: 0.02,
-    polish: 0.3,
+    color: '#D9CCB4',
+    roughness: 0.78,
+    metalness: 0,
+    polish: 0.2,
   },
   {
     id: 'sardo',
