@@ -280,7 +280,6 @@ export default function Builder() {
             <h1 className="font-serif text-sm leading-tight">מערכת הדמיית מצבות</h1>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/catalog" className="text-xs font-medium text-stone-600 hover:text-stone-900">קטלוג</a>
             <a href="/admin" className="text-xs font-medium text-stone-400 hover:text-stone-900 hidden sm:block">מנהל</a>
           </div>
         </div>

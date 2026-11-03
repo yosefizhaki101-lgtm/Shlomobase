@@ -8,7 +8,6 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Builder from '@/pages/Builder';
-import Catalog from '@/pages/Catalog';
 import Admin from '@/pages/Admin';
 
 const AuthenticatedApp = () => {
@@ -39,7 +38,6 @@ const AuthenticatedApp = () => {
     <Routes>
       {/* Add your page Route elements here */}
       <Route path="/" element={<Builder />} />
-      <Route path="/catalog" element={<Catalog />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
