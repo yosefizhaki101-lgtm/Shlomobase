@@ -27,7 +27,7 @@ const BASE_PRICES = {
     slab_two_garden: 900, slab_strip_thin: 400, slab_strip_thick: 550, slab_slope: 680,
     slab_garden_inner_45_60: 1000, slab_designed_typical: 1150, slab_garden_resting: 950, slab_designed_typical_2: 1200,
   },
-  headstone: { standing: 1200, open_book: 1800, pillow: 1000, heart: 1600, double_hearts: 2000, chiseled: 1400, slanted: 1300, arch: 2200 },
+  headstone: { standing: 1200, open_book: 1800, pillow: 1000, heart: 1600, double_hearts: 2000, chiseled: 1400, slanted: 1300, arch: 2200, wave: 2400, marble_inset: 1650, book_pedestal: 2150, tiered_marble: 1550 },
 };
 
 const VAT_RATE = 0.17;

@@ -5,6 +5,7 @@ import { makeStoneTextures } from '@/lib/stoneTextures';
 import { getPolishedReflectionEnv } from '@/lib/cemeteryEnvironment';
 import { makeTextTexture } from '@/lib/tombstoneText';
 import { buildNerHouse, getNerHouseFootprint, buildMountedCandleHousing } from '@/lib/nerHouseGeometry';
+import { buildSpeckledVase, buildTulipVase, buildCandleHouse } from '@/lib/accessoryModels';
 import { cloneGlbModel, applyMaterialToModel, transformModel } from '@/lib/glbModelCache';
 import {
   STONE_TYPES,
@@ -773,6 +774,54 @@ function buildHeadstoneOne({ W, L, y, stone, def, group, xOff = 0, zOff = 0, tex
       place(group, m, new THREE.Vector3(cx, y + hsH / 2, rearZ), 'headstone');
       return decalResult(y + hsH, m, rearZ, hsD, hsW, hsH);
     }
+    case 'headstone_marble_inset': {
+      // Light stone slab carrying a recessed polished black granite plaque
+      const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.67 * scale));
+      place(group, new THREE.Mesh(sharpGeo(hsW, hsH, hsD), mat), new THREE.Vector3(cx, y + hsH / 2, rearZ), 'headstone');
+      const plaqueStone = STONE_TYPES.find((s) => s.id === 'black_granite') || STONE_TYPES[0];
+      const plaqueW = hsW * 0.82, plaqueH = hsH * 0.74;
+      const plaqueZ = rearZ + hsD / 2 - 0.012;
+      const plaque = new THREE.Mesh(sharpGeo(plaqueW, plaqueH, 0.03), stoneMat(plaqueStone));
+      place(group, plaque, new THREE.Vector3(cx, y + hsH * 0.48, plaqueZ), 'headstone');
+      return {
+        topY: y + hsH,
+        decal: {
+          mesh: plaque,
+          pos: new THREE.Vector3(cx, y + hsH * 0.48, plaqueZ + 0.018),
+          look: new THREE.Vector3(cx, y + hsH * 0.48, plaqueZ - 0.2),
+          size: new THREE.Vector3(plaqueW * 0.9, plaqueH * 0.9, 0.2),
+          stone: plaqueStone,
+        },
+      };
+    }
+    case 'headstone_book_pedestal': {
+      // Open book standing on a stone pedestal
+      const hsW = (customW || (W * 0.8 * scale)), hsH = (customH || (W * 0.62 * scale));
+      const pedH = hsH * 0.3;
+      const bookH = hsH * 0.7;
+      const pageD = 0.06 * scale * thickness;
+      place(group, new THREE.Mesh(sharpGeo(hsW * 1.05, pedH, hsD * 1.15), mat), new THREE.Vector3(cx, y + pedH / 2, rearZ), 'headstone');
+      const pg = sharpGeo(hsW * 0.5, bookH, pageD);
+      const left = new THREE.Mesh(pg, mat);
+      left.rotation.y = -0.16;
+      place(group, left, new THREE.Vector3(cx - hsW * 0.25, y + pedH + bookH / 2, rearZ), 'headstone');
+      const right = new THREE.Mesh(pg.clone(), mat);
+      right.rotation.y = 0.16;
+      place(group, right, new THREE.Vector3(cx + hsW * 0.25, y + pedH + bookH / 2, rearZ), 'headstone');
+      return decalResult(y + pedH + bookH, left, rearZ, pageD, hsW * 0.4, bookH * 0.8);
+    }
+    case 'headstone_tiered_marble': {
+      // Slab with a projecting cornice cap and a matching plinth
+      const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.68 * scale));
+      const capH = hsH * 0.07;
+      const plinthH = hsH * 0.06;
+      const bodyH = hsH - capH - plinthH;
+      place(group, new THREE.Mesh(sharpGeo(hsW * 1.06, plinthH, hsD * 1.2), mat), new THREE.Vector3(cx, y + plinthH / 2, rearZ), 'headstone');
+      const body = new THREE.Mesh(sharpGeo(hsW, bodyH, hsD), mat);
+      place(group, body, new THREE.Vector3(cx, y + plinthH + bodyH / 2, rearZ), 'headstone');
+      place(group, new THREE.Mesh(sharpGeo(hsW * 1.1, capH, hsD * 1.25), mat), new THREE.Vector3(cx, y + plinthH + bodyH + capH / 2, rearZ), 'headstone');
+      return { topY: y + hsH, decal: decalResult(y + plinthH + bodyH, body, rearZ, hsD, hsW * 0.86, bodyH * 0.85).decal };
+    }
     case 'headstone_wave': {
       // Curved/wave headstone — organic S-curve with layered tiered segments,
       // inspired by real polished granite memorial sculptures.
@@ -1129,6 +1178,22 @@ function buildAccessories({ W, L, y, stone, accessories, accessoryPositions, gro
         buildLantern(group, offsetX + 0.19, baseY, frontZ, n);
         break;
       }
+      case 'vase_speckled_blue':
+      case 'vase_tulip_white': {
+        const vase = accId === 'vase_tulip_white' ? buildTulipVase() : buildSpeckledVase();
+        vase.position.set(offsetX, baseY, frontZ);
+        vase.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        group.add(vase);
+        break;
+      }
+      case 'ner_house_silver':
+      case 'ner_house_bronze': {
+        const house = buildCandleHouse(accId === 'ner_house_bronze' ? 'bronze' : 'silver');
+        house.position.set(offsetX, baseY, frontZ);
+        house.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        group.add(house);
+        break;
+      }
       default: break;
     }
     // Group everything this accessory added so it can be dragged as one piece on the model
@@ -1379,8 +1444,9 @@ export function buildTombstone(design, glbModels = null) {
 
   if (decalInfo && design.engravingText) {
     const lettering = LETTERING_TYPES.find((l) => l.id === design.letteringType) || LETTERING_TYPES[0];
-    const textTex = makeTextTexture(design.engravingText, lettering.style, bodyStone, 1024, design.headstoneTextScale || 1);
-    const isDarkStone = bodyStone.color && new THREE.Color(bodyStone.color).r < 0.2;
+    const letterStone = decalInfo.stone || bodyStone;
+    const textTex = makeTextTexture(design.engravingText, lettering.style, letterStone, 1024, design.headstoneTextScale || 1);
+    const isDarkStone = letterStone.color && new THREE.Color(letterStone.color).r < 0.2;
     const textMat = new THREE.MeshStandardMaterial({
       map: textTex,
       transparent: true,

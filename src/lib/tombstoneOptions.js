@@ -229,6 +229,9 @@ export const HEADSTONE_TOPS = [
   { id: 'slanted', name: 'אלכסונית', geom: 'headstone_slanted_modern', desc: 'אבן ראש אלכסונית' },
   { id: 'arch', name: 'כפולה עמודים', geom: 'headstone_arch_columns', desc: 'אבן ראש כפולה עם קשת' },
   { id: 'wave', name: 'גלית', geom: 'headstone_wave', desc: 'אבן ראש גלית מעוצבת בשכבות' },
+  { id: 'marble_inset', name: 'שיש עם לוח גרניט', geom: 'headstone_marble_inset', desc: 'שיש בהיר עם לוח גרניט שחור משוקע' },
+  { id: 'book_pedestal', name: 'ספר פתוח על כן', geom: 'headstone_book_pedestal', desc: 'ספר אבן פתוח על כן' },
+  { id: 'tiered_marble', name: 'שיש עם כרכוב', geom: 'headstone_tiered_marble', desc: 'שיש עם כרכוב עליון ובסיס בולט' },
 ];
 
 export const HEADSTONE_PLACEMENTS = [
@@ -264,6 +267,10 @@ export const ACCESSORIES = [
   { id: 'vase_black_tapered', name: 'כד שחור מחודד', desc: 'כד גרניט שחור גלילי מחודד', price: 400 },
   { id: 'vase_white_round', name: 'כד לבן עגול', desc: 'כד שיש לבן עגול', price: 500 },
   { id: 'vase_grey_square', name: 'כד אפור מרובע', desc: 'כד גרניט אפור מרובע', price: 420 },
+  { id: 'vase_speckled_blue', name: 'כד גרניט מנומר', desc: 'כד אבן כחול־אפור עם שוליים רחבים', price: 480 },
+  { id: 'vase_tulip_white', name: 'כד טוליפ לבן', desc: 'כד קרמיקה לבן עם שוליים מפוסלים', price: 390 },
+  { id: 'ner_house_silver', name: 'בית מנורה כסף', desc: 'בית מנורה עם חזית כסף לבנים ומגן דוד', price: 850 },
+  { id: 'ner_house_bronze', name: 'בית מנורה ברונזה', desc: 'בית מנורה עם חזית ברונזה מקשתות', price: 950 },
 ];
 
 export const LETTERING_TYPES = [
