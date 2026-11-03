@@ -149,22 +149,21 @@ function stoneMat(stone, textureUrl) {
   const isMirror = stone.polish >= 0.95;
   if (isMirror) {
     return new THREE.MeshPhysicalMaterial({
-      // Deep, saturated body colour (jet black for black granite) — the polished
-      // highlights come from the clearcoat/environment reflections, not from the diffuse
-      color: new THREE.Color(stone.color || '#ffffff'),
+      // Absolute Black granite: a deep, saturated black body. The gloss is a thin
+      // glassy clearcoat, so reflections sit on top of the black instead of greying it out.
+      color: new THREE.Color(stone.color || '#000000'),
       map: t.map,
       // Mirror polish: the micro-surface must stay glassy, otherwise the stone reads matte
       normalMap: t.normalMap,
-      normalScale: new THREE.Vector2(t.nStr * 0.25, t.nStr * 0.25),
-      roughnessMap: t.roughnessMap,
-      roughness: 0.02,
-      metalness: 0.02,
-      clearcoat: stone.clearcoat ?? 1.0,
-      clearcoatRoughness: stone.clearcoatRoughness ?? 0.02,
-      // Reflects sky above and ground below — the graphite sheen and bright edge
-      // highlights seen on real polished black granite
+      normalScale: new THREE.Vector2(t.nStr * 0.12, t.nStr * 0.12),
+      roughness: 0.008,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.012,
+      // Just enough environment to read as polished — sharp glints and bright edges,
+      // never a wash of light over the face
       envMap: getPolishedReflectionEnv(),
-      envMapIntensity: 1.8,
+      envMapIntensity: 0.45,
     });
   }
   // Polished stones (marble, fine granite): clearcoat for a realistic polished surface
