@@ -2,6 +2,72 @@ import * as THREE from 'three';
 
 // ---- Design mode: open sky with clouds over sandy soil ----
 
+// Reflection environment used by polished stones (black granite, marble).
+// A polished slab mirrors its surroundings, so the surface must show a bright
+// horizon band with sky above and warm ground below — exactly what gives real
+// jet-black granite its graphite sheen and bright edge highlights.
+let POLISHED_REFLECT_ENV = null;
+
+export function getPolishedReflectionEnv() {
+  if (POLISHED_REFLECT_ENV) return POLISHED_REFLECT_ENV;
+
+  const w = 1024;
+  const h = 512;
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d');
+
+  // Sky above the horizon
+  const sky = ctx.createLinearGradient(0, 0, 0, h * 0.5);
+  sky.addColorStop(0, '#4a86c4');
+  sky.addColorStop(0.65, '#9dc7e8');
+  sky.addColorStop(1, '#eef6fb');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h * 0.5);
+
+  // Warm ground below the horizon
+  const ground = ctx.createLinearGradient(0, h * 0.5, 0, h);
+  ground.addColorStop(0, '#e6d5b6');
+  ground.addColorStop(0.35, '#cdb28a');
+  ground.addColorStop(1, '#a88f6c');
+  ctx.fillStyle = ground;
+  ctx.fillRect(0, h * 0.5, w, h * 0.5);
+
+  // Bright horizon line — the crisp highlight real polished stone picks up
+  const horizon = ctx.createLinearGradient(0, h * 0.47, 0, h * 0.545);
+  horizon.addColorStop(0, 'rgba(255,255,255,0)');
+  horizon.addColorStop(0.5, 'rgba(255,255,255,0.92)');
+  horizon.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = horizon;
+  ctx.fillRect(0, h * 0.47, w, h * 0.075);
+
+  // Broad soft highlights — clouds and sun reflected in the slab
+  const soft = (cx, cy, rx, ry, alpha) => {
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
+    g.addColorStop(0, `rgba(255,255,255,${alpha})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(1, ry / Math.max(rx, ry));
+    ctx.translate(-cx, -cy);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(rx, ry), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+  soft(w * 0.22, h * 0.26, 190, 90, 0.75);
+  soft(w * 0.68, h * 0.3, 150, 70, 0.55);
+  soft(w * 0.95, h * 0.22, 120, 60, 0.45);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  POLISHED_REFLECT_ENV = tex;
+  return tex;
+}
+
 function makeSkyTexture() {
   const w = 2048;
   const h = 1024;

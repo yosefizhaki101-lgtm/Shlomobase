@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { makeStoneTextures } from '@/lib/stoneTextures';
+import { getPolishedReflectionEnv } from '@/lib/cemeteryEnvironment';
 import { makeTextTexture } from '@/lib/tombstoneText';
 import { buildNerHouse, getNerHouseFootprint, buildMountedCandleHousing } from '@/lib/nerHouseGeometry';
 import { cloneGlbModel, applyMaterialToModel, transformModel } from '@/lib/glbModelCache';
@@ -152,14 +153,18 @@ function stoneMat(stone, textureUrl) {
       // highlights come from the clearcoat/environment reflections, not from the diffuse
       color: new THREE.Color(stone.color || '#ffffff'),
       map: t.map,
+      // Mirror polish: the micro-surface must stay glassy, otherwise the stone reads matte
       normalMap: t.normalMap,
-      normalScale: new THREE.Vector2(t.nStr * 1.6, t.nStr * 1.6),
+      normalScale: new THREE.Vector2(t.nStr * 0.25, t.nStr * 0.25),
       roughnessMap: t.roughnessMap,
-      roughness: stone.roughness,
-      metalness: stone.metalness || 0,
+      roughness: 0.02,
+      metalness: 0.02,
       clearcoat: stone.clearcoat ?? 1.0,
-      clearcoatRoughness: stone.clearcoatRoughness ?? 0.03,
-      envMapIntensity: 2.5,
+      clearcoatRoughness: stone.clearcoatRoughness ?? 0.02,
+      // Reflects sky above and ground below — the graphite sheen and bright edge
+      // highlights seen on real polished black granite
+      envMap: getPolishedReflectionEnv(),
+      envMapIntensity: 1.8,
     });
   }
   // Polished stones (marble, fine granite): clearcoat for a realistic polished surface
