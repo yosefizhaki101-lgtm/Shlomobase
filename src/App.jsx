@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import AccessGate from '@/components/AccessGate';
 // Add page imports here
 import Builder from '@/pages/Builder';
 import Admin from '@/pages/Admin';
@@ -35,12 +36,14 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="/" element={<Builder />} />
-      <Route path="/admin" element={<Admin />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <AccessGate>
+      <Routes>
+        {/* Add your page Route elements here */}
+        <Route path="/" element={<Builder />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </AccessGate>
   );
 };
 

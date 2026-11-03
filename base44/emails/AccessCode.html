@@ -1,0 +1,69 @@
+<mjml>
+  <mj-head>
+    <mj-title>סיסמת הכניסה שלך</mj-title>
+    <mj-preview>קוד חד-פעמי לפתיחת האפליקציה, בתוקף לעשר דקות</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-text color="#1c1917" font-size="15px" line-height="1.7" padding="0" />
+      <mj-button background-color="#1c1917" color="#ffffff" border-radius="8px" font-weight="700" inner-padding="14px 28px" align="center" />
+      <mj-class name="h" font-family="Georgia, Arial, sans-serif" font-weight="700" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#fafaf9" direction="rtl">
+    <mj-section background-color="#1c1917" padding="22px 36px">
+      <mj-column>
+        <mj-image src="https://media.base44.com/images/public/6ad48f32fcce9263fd99a9b8/89a635e5d_logo.png" width="44px" align="right" padding="0" />
+        <mj-text mj-class="h" color="#ffffff" font-size="18px" padding="10px 0 0" align="right">מצבות</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="40px 36px 8px">
+      <mj-column>
+        <mj-text mj-class="h" font-size="28px" line-height="1.25" align="right" padding="0 0 8px">
+          סיסמת הכניסה שלך
+        </mj-text>
+        <mj-text color="#78716c" align="right" padding="0">
+          הגישה לאפליקציה נפתחת לעשר דקות. זהו הקוד שתזינו במסך הנעילה.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f5f5f4" padding="28px 36px" border-radius="8px">
+      <mj-column>
+        <mj-text align="center" color="#78716c" font-size="12px" padding="0 0 6px">
+          הקוד שלך
+        </mj-text>
+        <mj-text align="center" mj-class="h" font-size="38px" letter-spacing="10px" color="#1c1917" padding="0">
+          {{code}}
+        </mj-text>
+        <mj-text align="center" color="#78716c" font-size="12px" padding="10px 0 0">
+          בתוקף עד השעה {{expires_at}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="28px 36px 8px">
+      <mj-column>
+        <mj-button href="https://copy-fd99a9b8.base44.app">
+          כניסה לאפליקציה
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="0 36px 36px">
+      <mj-column>
+        <mj-text color="#78716c" font-size="12px" align="right" padding="0">
+          בתום עשר הדקות הגישה ננעלת אוטומטית, הקוד הזה פג, וקוד חדש יישלח לכתובת הזו.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#1c1917" padding="20px 36px">
+      <mj-column>
+        <mj-text color="#a8a29e" font-size="11px" align="center" padding="0">
+          הקוד נוצר אוטומטית. אין להעביר אותו הלאה.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
