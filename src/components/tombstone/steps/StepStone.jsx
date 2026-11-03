@@ -13,7 +13,7 @@ const DIM_LABELS = {
 };
 
 export default function StepStone({ design, update }) {
-  const isFamily = ['family', 'double', 'reopen_family', 'adjacent'].includes(design.tombstoneType);
+  const isFamily = ['family', 'double'].includes(design.tombstoneType);
   const profile = getProfile(design.cemeteryProfile || 'default');
 
   return (

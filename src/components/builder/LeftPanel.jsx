@@ -33,6 +33,23 @@ function FloorButton({ adding, onClick, label = 'הוסף קומה נוספת' }
   );
 }
 
+// כל סוג מצבה מביא איתו את המבנה המקובל שלו:
+// כפולה — שני ראשים זה לצד זה ופלטה מחולקת לשני קברים; משפחתית — ראש אחד רחב ומונמך;
+// רגילה/קטנה — ראש אחד במרכז.
+const TYPE_PRESETS = {
+  small:   { headstonePlacement: 'top',   headstoneScale: 1,    slab: ['slab_8_smooth'],  headstoneWidthCm: null, headstoneHeightCm: null },
+  regular: { headstonePlacement: 'top',   headstoneScale: 1,    slab: ['slab_8_smooth'],  headstoneWidthCm: null, headstoneHeightCm: null },
+  family:  { headstonePlacement: 'top',   headstoneScale: 0.8,  slab: ['slab_8_smooth'],  headstoneWidthCm: null, headstoneHeightCm: null },
+  double:  { headstonePlacement: 'sides', headstoneScale: 1,    slab: ['slab_divided_2'], headstoneWidthCm: 45,   headstoneHeightCm: 75 },
+};
+const RESET_PART_DIMS = {
+  slabWidthCm: null,
+  slabLengthCm: null,
+  slabHeightCm: null,
+  frameWidthCm: null,
+  frameLengthCm: null,
+};
+
 const REPLACE_HINT = 'בחירת פריט מחליפה את הקומה הקיימת. להוספת קומה נוספת לחצו על "הוסף קומה".';
 const ADD_HINT = 'לחצו על פריט כדי להוסיף אותו כקומה נוספת מעל הקיימות.';
 
@@ -71,6 +88,8 @@ export default function LeftPanel({ step, setStep, design, update }) {
                         tombstoneType: t.id,
                         panelWidthCm: dims?.width || null,
                         panelLengthCm: dims?.length || null,
+                        ...RESET_PART_DIMS,
+                        ...TYPE_PRESETS[t.id],
                       })}
                       swatchKey={undefined}
                     />

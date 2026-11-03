@@ -1,7 +1,7 @@
 import { STONE_TYPES, TOMBSTONE_TYPES, PANELS, FRAMES, SLABS, HEADSTONE_TOPS, ACCESSORIES, LETTERING_TYPES } from '@/lib/tombstoneOptions';
 
 const BASE_PRICES = {
-  tombstone_type: { small: 3500, regular: 5500, family: 8500, double: 7500, custom: 7000, reopen_family: 9000, reopen_living: 6500, adjacent: 8000 },
+  tombstone_type: { small: 3500, regular: 5500, double: 7500, family: 8500 },
   stone_mult: { black_granite: 1.3, turkish_marble: 1.0, hebron: 0.9, halila: 1.15, sardo: 1.2, red_stone: 1.25, orion_belen: 1.1, white_marble: 1.05, grey_tuvza: 0.95 },
   panel: {
     panel_10: 400, panel_15: 550, flooring: 300, flooring_raise: 700,

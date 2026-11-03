@@ -116,42 +116,32 @@ export const STONE_TYPES = [
   },
 ];
 
-// מידות ברירת מחדל (ס"מ) לפי סוג מצבה — מבוססות על המידות המקובלות בישראל:
-// מצבת יחיד 75×170 (בחלק מבתי העלמין 80 רוחב), מצבה כפולה/משפחתית ברוחב של שתי חלקות (כ-160),
-// "חצי מצבה" (מצבה קטנה) כ-70×70. הגובה הכולל מוגבל בדרך כלל ל-140 ס"מ מהיסוד,
+// מידות ברירת מחדל (ס"מ) לפי סוג מצבה — המידות הסטנדרטיות המקובלות בישראל:
+// מצבת יחיד 75×170 (בחלק מבתי העלמין 80 רוחב), מצבה כפולה — שני קברים צמודים במבנה אחיד,
+// 140×180 (במקורות 120–160 רוחב), מצבה משפחתית — שלוש חלקות ויותר, 190×190,
+// ו"חצי מצבה" (מצבה קטנה) 70×70. הגובה הכולל מוגבל בדרך כלל ל-140 ס"מ מהיסוד,
 // ובבתי עלמין מסוימים ל-80 או 60 ס"מ — המידות הסופיות טעונות אישור חברה קדישא.
 export const TOMBSTONE_DIMENSIONS = {
-  small:          { width: 70,  length: 70,  maxHeight: 140 },
-  regular:        { width: 75,  length: 170, maxHeight: 140 },
-  family:         { width: 160, length: 185, maxHeight: 140 },
-  double:         { width: 160, length: 180, maxHeight: 140 },
-  custom:         { width: 75,  length: 170, maxHeight: 140 },
-  reopen_family:  { width: 160, length: 180, maxHeight: 140 },
-  reopen_living:  { width: 75,  length: 170, maxHeight: 140 },
-  adjacent:       { width: 75,  length: 170, maxHeight: 140 },
+  small:   { width: 70,  length: 70,  maxHeight: 140 },
+  regular: { width: 75,  length: 170, maxHeight: 140 },
+  family:  { width: 190, length: 190, maxHeight: 140 },
+  double:  { width: 140, length: 180, maxHeight: 140 },
 };
 
 // טווחי מידות סבירים (ס"מ) לכל סוג מצבה — משמשים להגבלת שדות המידות בעורך
 export const TOMBSTONE_RANGES = {
-  small:          { width: [55, 80],    length: [55, 95] },
-  regular:        { width: [70, 85],    length: [160, 195] },
-  family:         { width: [140, 190],  length: [170, 205] },
-  double:         { width: [140, 190],  length: [170, 205] },
-  custom:         { width: [50, 200],   length: [50, 400] },
-  reopen_family:  { width: [140, 190],  length: [170, 205] },
-  reopen_living:  { width: [70, 85],    length: [160, 195] },
-  adjacent:       { width: [70, 90],    length: [160, 195] },
+  small:   { width: [55, 80],    length: [55, 95] },
+  regular: { width: [70, 85],    length: [160, 195] },
+  family:  { width: [170, 260],  length: [170, 210] },
+  double:  { width: [115, 165],  length: [160, 200] },
 };
 
+// ארבעת סוגי המצבות הסטנדרטיים בישראל
 export const TOMBSTONE_TYPES = [
-  { id: 'small', name: 'קטנה', desc: 'מצבה קטנה' },
-  { id: 'regular', name: 'רגילה', desc: 'מצבה רגילה' },
-  { id: 'family', name: 'משפחתית', desc: 'מצבה משפחתית רחבה' },
-  { id: 'double', name: 'כפולה', desc: 'מצבה כפולה' },
-  { id: 'custom', name: 'מידות מיוחדות', desc: 'מידות מותאמות אישית' },
-  { id: 'reopen_family', name: 'פתיחה והחזרה - משפחתית', desc: 'פתיחת קבר משפחתי' },
-  { id: 'reopen_living', name: 'פתיחה והחזרה - מצבה בחיים', desc: 'מצבה מראש לחיים' },
-  { id: 'adjacent', name: 'חיבור למצבים ליד', desc: 'חיבור למצבות סמוכות' },
+  { id: 'small', name: 'קטנה', desc: 'חצי מצבה' },
+  { id: 'regular', name: 'רגילה', desc: 'קבר יחיד' },
+  { id: 'family', name: 'משפחתית', desc: 'כמה חלקות סמוכות' },
+  { id: 'double', name: 'כפולה', desc: 'שני קברים צמודים' },
 ];
 
 export const PANELS = [

@@ -50,7 +50,7 @@ export default function StepSummary({ design, update, submitting, done, onSubmit
         <Row label="מסגרת" value={find(FRAMES, design.frame, 'name')} />
         <Row label="פלטה" value={find(SLABS, design.slab, 'name')} />
         <Row label="ראש מצבה" value={find(HEADSTONE_TOPS, design.headstoneTop, 'name')} />
-        {['family', 'double', 'reopen_family'].includes(design.tombstoneType) && (
+        {['family', 'double'].includes(design.tombstoneType) && (
           <Row label="מיקום אבני ראש" value={find(HEADSTONE_PLACEMENTS, design.headstonePlacement, 'name')} />
         )}
         <Row label="תוספות" value={accNames} />

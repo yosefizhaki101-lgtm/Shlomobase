@@ -8,6 +8,7 @@ import { cloneGlbModel, applyMaterialToModel, transformModel } from '@/lib/glbMo
 import {
   STONE_TYPES,
   TOMBSTONE_TYPES,
+  TOMBSTONE_DIMENSIONS,
   PANELS,
   FRAMES,
   SLABS,
@@ -1175,13 +1176,10 @@ export function buildTombstone(design, glbModels = null) {
   const slabStone = resolveStoneForPart(design, 'slabStone');
   const hsStone = resolveStoneForPart(design, 'headstoneStone');
   const tt = TOMBSTONE_TYPES.find((t) => t.id === design.tombstoneType) || TOMBSTONE_TYPES[1];
-  const isSmall = tt.id === 'small';
-  // Accepted Israeli proportions: single grave 75cm wide × 170cm long,
-  // side-by-side double/family graves ~160cm wide × 180cm long,
-  // and a small ("half") stone about 70×70cm.
-  const isWide = tt.id === 'family' || tt.id === 'double' || tt.id === 'reopen_family';
-  const defaultW = isSmall ? 0.7 : isWide ? 1.6 : 0.75;
-  const defaultL = isSmall ? 0.7 : isWide ? 1.8 : 1.7;
+  // מידות ברירת מחדל לפי סוג המצבה: יחיד 75×170, כפולה 140×180, משפחתית 190×190, קטנה 70×70
+  const dims = TOMBSTONE_DIMENSIONS[tt.id] || TOMBSTONE_DIMENSIONS.regular;
+  const defaultW = dims.width / 100;
+  const defaultL = dims.length / 100;
   const W = design.panelWidthCm ? design.panelWidthCm / 100 : defaultW;
   const L = design.panelLengthCm ? design.panelLengthCm / 100 : defaultL;
 
