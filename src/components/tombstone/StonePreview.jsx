@@ -298,8 +298,8 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
       envGroupRef.current = createDesignGround();
       scene.add(envGroupRef.current);
 
-      // Soft sky fill — warm top, cool bottom (museum ambient)
-      const hemi = new THREE.HemisphereLight(0xfffef8, 0xc8c0b0, 0.7);
+      // Soft sky fill — blue sky above, warm sandy bounce below
+      const hemi = new THREE.HemisphereLight(0xcfe4ff, 0xcdb58c, 0.75);
       scene.add(hemi);
       lightsRef.current.push(hemi);
 
@@ -338,7 +338,8 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
       scene.add(rim);
       lightsRef.current.push(rim);
 
-      scene.fog = new THREE.Fog(0xe8e0d0, 12, 30);
+      // Light haze so the sandy ground melts into the horizon
+      scene.fog = new THREE.Fog(0xdfe7ee, 18, 48);
       scene.background = null;
     }
 
@@ -461,7 +462,7 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
           background:
             mode === 'photo'
               ? 'linear-gradient(180deg, #c5b8a0 0%, #a89880 100%)'
-              : 'linear-gradient(180deg, #f0e8d8 0%, #d8c8a8 100%)',
+              : 'linear-gradient(180deg, #7fb5e0 0%, #cfe0e8 55%, #c8ab7f 100%)',
         }}
       />
       {/* Mode toggle */}
