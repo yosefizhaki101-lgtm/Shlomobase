@@ -106,10 +106,10 @@ export const STONE_TYPES = [
   {
     id: 'grey_tuvza',
     name: 'טובזה אפור',
-    desc: 'טובזה אפורה כהה - אבן פראית מסותתת',
-    swatch: 'linear-gradient(135deg, #5C5F62 0%, #3A3C3F 100%)',
+    desc: 'טובזה אפורה בהירה - גרניט מנומר בגוון אפור קריר',
+    swatch: 'radial-gradient(circle at 26% 34%, #45494D 0 9%, transparent 10%), radial-gradient(circle at 66% 62%, #3E4246 0 7%, transparent 8%), radial-gradient(circle at 44% 82%, #6E7377 0 8%, transparent 9%), radial-gradient(circle at 80% 22%, #7C8185 0 6%, transparent 7%), linear-gradient(135deg, #B3B8BB 0%, #9BA1A5 100%)',
     kind: 'tuvza',
-    color: '#4B4D50',
+    color: '#A8ADB0',
     roughness: 0.98,
     metalness: 0,
     polish: 0.01,
