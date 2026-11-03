@@ -41,7 +41,9 @@ export default function DimensionEditor({ title = 'עריכת מידות מתק�
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-stone-400">השאירו ריק למידות ברירת מחדל. הגובה חל על השכבה העליונה.</p>
+          <p className="text-[9px] text-stone-400">
+            השאירו ריק למידות ברירת מחדל. המידות הסופיות טעונות אישור חברה קדישא של בית העלמין.
+          </p>
         </div>
       )}
     </div>

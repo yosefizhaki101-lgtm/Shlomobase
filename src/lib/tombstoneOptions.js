@@ -116,15 +116,31 @@ export const STONE_TYPES = [
   },
 ];
 
+// מידות ברירת מחדל (ס"מ) לפי סוג מצבה — מבוססות על המידות המקובלות בישראל:
+// מצבת יחיד 75×170 (בחלק מבתי העלמין 80 רוחב), מצבה כפולה/משפחתית ברוחב של שתי חלקות (כ-160),
+// "חצי מצבה" (מצבה קטנה) כ-70×70. הגובה הכולל מוגבל בדרך כלל ל-140 ס"מ מהיסוד,
+// ובבתי עלמין מסוימים ל-80 או 60 ס"מ — המידות הסופיות טעונות אישור חברה קדישא.
 export const TOMBSTONE_DIMENSIONS = {
-  small:          { width: 75, length: 90,  maxHeight: 90  },
-  regular:        { width: 75, length: 170, maxHeight: 90  },
-  family:         { width: 150, length: 180, maxHeight: 90  },
-  double:         { width: 150, length: 190, maxHeight: 90  },
-  custom:         { width: 75, length: 170, maxHeight: 90  },
-  reopen_family:  { width: 75, length: 180, maxHeight: 90  },
-  reopen_living:  { width: 75, length: 170, maxHeight: 90  },
-  adjacent:       { width: 75, length: 170, maxHeight: 90  },
+  small:          { width: 70,  length: 70,  maxHeight: 140 },
+  regular:        { width: 75,  length: 170, maxHeight: 140 },
+  family:         { width: 160, length: 185, maxHeight: 140 },
+  double:         { width: 160, length: 180, maxHeight: 140 },
+  custom:         { width: 75,  length: 170, maxHeight: 140 },
+  reopen_family:  { width: 160, length: 180, maxHeight: 140 },
+  reopen_living:  { width: 75,  length: 170, maxHeight: 140 },
+  adjacent:       { width: 75,  length: 170, maxHeight: 140 },
+};
+
+// טווחי מידות סבירים (ס"מ) לכל סוג מצבה — משמשים להגבלת שדות המידות בעורך
+export const TOMBSTONE_RANGES = {
+  small:          { width: [55, 80],    length: [55, 95] },
+  regular:        { width: [70, 85],    length: [160, 195] },
+  family:         { width: [140, 190],  length: [170, 205] },
+  double:         { width: [140, 190],  length: [170, 205] },
+  custom:         { width: [50, 200],   length: [50, 400] },
+  reopen_family:  { width: [140, 190],  length: [170, 205] },
+  reopen_living:  { width: [70, 85],    length: [160, 195] },
+  adjacent:       { width: [70, 90],    length: [160, 195] },
 };
 
 export const TOMBSTONE_TYPES = [

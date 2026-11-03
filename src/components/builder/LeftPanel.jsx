@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_DIMENSIONS, PANELS, FRAMES, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
+import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_DIMENSIONS, TOMBSTONE_RANGES, PANELS, FRAMES, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
 import OptionCard from '@/components/builder/OptionCard';
 import MaterialSelector from '@/components/tombstone/MaterialSelector';
 import StepAccessories from '@/components/tombstone/steps/StepAccessories';
@@ -39,6 +39,8 @@ const ADD_HINT = 'לחצו על פריט כדי להוסיף אותו כקומה
 export default function LeftPanel({ step, setStep, design, update }) {
   const currentStep = STEPS[step];
   const [addFloor, setAddFloor] = useState({ panel: false, frame: false });
+  // סוג המצבה קובע את טווחי הרוחב והאורך המקובלים
+  const dimRanges = TOMBSTONE_RANGES[design.tombstoneType] || TOMBSTONE_RANGES.regular;
 
   // First pick replaces the existing floor; once "add floor" is on, picks stack another floor on top.
   const pickLayer = (modeKey, field, id, current, max = 3) => {
@@ -63,7 +65,7 @@ export default function LeftPanel({ step, setStep, design, update }) {
                   return (
                     <OptionCard
                       key={t.id}
-                      option={t}
+                      option={{ ...t, desc: `${dims.width}×${dims.length} ס"מ` }}
                       active={design.tombstoneType === t.id}
                       onClick={() => update({
                         tombstoneType: t.id,
@@ -112,8 +114,8 @@ export default function LeftPanel({ step, setStep, design, update }) {
             <DimensionEditor
               title="מידות הפאנל (ס&quot;מ)"
               fields={[
-                { key: 'panelWidthCm', label: 'רוחב', min: 30, max: 300, step: 5 },
-                { key: 'panelLengthCm', label: 'אורך', min: 50, max: 400, step: 5 },
+                { key: 'panelWidthCm', label: 'רוחב', min: dimRanges.width[0], max: dimRanges.width[1], step: 5 },
+                { key: 'panelLengthCm', label: 'אורך', min: dimRanges.length[0], max: dimRanges.length[1], step: 5 },
                 { key: 'panelHeightCm', label: 'גובה', min: 5, max: 30, step: 1 },
               ]}
               design={design}
@@ -131,13 +133,13 @@ export default function LeftPanel({ step, setStep, design, update }) {
         const colorFieldMap = { 2: 'frameColor', 3: 'slabColor', 4: 'headstoneColor' };
         const dimFieldsMap = {
           2: [
-            { key: 'frameWidthCm', label: 'רוחב', min: 30, max: 300, step: 5 },
-            { key: 'frameLengthCm', label: 'אורך', min: 50, max: 400, step: 5 },
+            { key: 'frameWidthCm', label: 'רוחב', min: dimRanges.width[0], max: dimRanges.width[1] + 20, step: 5 },
+            { key: 'frameLengthCm', label: 'אורך', min: dimRanges.length[0], max: dimRanges.length[1] + 10, step: 5 },
             { key: 'frameHeightCm', label: 'גובה', min: 5, max: 50, step: 1 },
           ],
           3: [
-            { key: 'slabWidthCm', label: 'רוחב', min: 30, max: 300, step: 5 },
-            { key: 'slabLengthCm', label: 'אורך', min: 50, max: 400, step: 5 },
+            { key: 'slabWidthCm', label: 'רוחב', min: dimRanges.width[0], max: dimRanges.width[1] + 10, step: 5 },
+            { key: 'slabLengthCm', label: 'אורך', min: dimRanges.length[0], max: dimRanges.length[1] + 10, step: 5 },
             { key: 'slabHeightCm', label: 'גובה', min: 3, max: 20, step: 1 },
           ],
           4: [
