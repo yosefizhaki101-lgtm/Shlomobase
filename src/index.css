@@ -95,3 +95,122 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+/* ------------------------------------------------------------------
+   נגישות (ת"י 5568 / WCAG 2.0 AA)
+   html carries the user's choices as classes + the --a11y-scale variable.
+   ------------------------------------------------------------------ */
+
+html {
+  font-size: calc(16px * var(--a11y-scale, 1));
+}
+
+/* Clear, high-contrast keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid #1d4ed8 !important;
+  outline-offset: 2px !important;
+}
+
+/* Skip to main content — off screen until focused */
+.a11y-skip-link {
+  position: fixed;
+  top: 0;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  transform: translateY(-160%);
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: #ffffff;
+  color: #111827;
+  border: 2px solid #1d4ed8;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: transform 0.15s ease;
+}
+
+.a11y-skip-link:focus {
+  transform: translateY(0);
+}
+
+/* High contrast */
+html.a11y-contrast body *:not(svg):not(svg *) {
+  background-color: #000000 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.a11y-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html.a11y-contrast a,
+html.a11y-contrast a * {
+  color: #ffe14d !important;
+  text-decoration: underline !important;
+}
+
+html.a11y-contrast button,
+html.a11y-contrast [role="button"] {
+  border: 2px solid #ffffff !important;
+}
+
+html.a11y-contrast input,
+html.a11y-contrast textarea,
+html.a11y-contrast select {
+  border: 2px solid #ffffff !important;
+}
+
+html.a11y-contrast :focus-visible {
+  outline: 3px solid #ffe14d !important;
+}
+
+/* Grayscale */
+html.a11y-grayscale body {
+  filter: grayscale(100%);
+}
+
+/* Highlight links */
+html.a11y-links a {
+  background-color: #fff8c4 !important;
+  color: #000000 !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  outline: 2px solid #b45309 !important;
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* Readable font */
+html.a11y-readable body,
+html.a11y-readable body * {
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+  letter-spacing: 0.01em !important;
+  word-spacing: 0.06em !important;
+  line-height: 1.65 !important;
+}
+
+/* Stop animations */
+html.a11y-noanim *,
+html.a11y-noanim *::before,
+html.a11y-noanim *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Respect the operating system's reduced-motion setting */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

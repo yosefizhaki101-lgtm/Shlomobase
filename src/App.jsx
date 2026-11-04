@@ -6,9 +6,13 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import { AccessibilityProvider } from '@/components/a11y/AccessibilityProvider';
+import SkipLink from '@/components/a11y/SkipLink';
+import AccessibilityWidget from '@/components/a11y/AccessibilityWidget';
 // Add page imports here
 import Builder from '@/pages/Builder';
 import Admin from '@/pages/Admin';
+import Accessibility from '@/pages/Accessibility';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -39,6 +43,7 @@ const AuthenticatedApp = () => {
       {/* Add your page Route elements here */}
       <Route path="/" element={<Builder />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/accessibility" element={<Accessibility />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -50,10 +55,14 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
-        </Router>
+        <AccessibilityProvider>
+          <Router>
+            <SkipLink />
+            <ScrollToTop />
+            <AuthenticatedApp />
+            <AccessibilityWidget />
+          </Router>
+        </AccessibilityProvider>
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowRight, Bot, Box, Gem, LogOut, Layers, Boxes } from 'lucide-react';
+import { Plus, ArrowRight, Bot, Box, Gem, LogOut, Layers, Boxes, Settings } from 'lucide-react';
+import StoreSettingsEditor from '@/components/admin/StoreSettingsEditor';
 import PartEditor from '@/components/admin/PartEditor';
 import TextureMatrix from '@/components/admin/TextureMatrix';
 import StoneEditor from '@/components/admin/StoneEditor';
@@ -74,7 +75,7 @@ export default function Admin() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div id="main-content" role="main" tabIndex={-1} className="max-w-5xl mx-auto px-4 py-6">
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b">
           <button
@@ -121,6 +122,15 @@ export default function Admin() {
           >
             <Boxes className="w-4 h-4" />
             מודלי GLB
+          </button>
+          <button
+            onClick={() => setTab('store')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'store' ? 'border-stone-800 text-stone-800' : 'border-transparent text-stone-500 hover:text-stone-700'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            הגדרות חנות
           </button>
         </div>
 
@@ -308,6 +318,9 @@ export default function Admin() {
         {tab === 'glb' && (
           <GlbModelManager />
         )}
+
+        {/* Store settings tab */}
+        {tab === 'store' && <StoreSettingsEditor />}
       </div>
     </div>
   );

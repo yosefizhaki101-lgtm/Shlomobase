@@ -6,6 +6,7 @@ import { buildRenderPrompt } from '@/lib/buildRenderPrompt';
 import { REFERENCE_TOMBSTONE_PHOTOS } from '@/lib/renderReferences';
 import { cn } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import StonePreview from '@/components/tombstone/StonePreview';
 import LeftPanel from '@/components/builder/LeftPanel';
 import RightPanel from '@/components/builder/RightPanel';
@@ -341,7 +342,7 @@ export default function Builder() {
       </div>
 
       {/* Mobile: stacked layout with tabs */}
-      <div className="flex lg:hidden flex-1 flex-col min-h-0">
+      <div role="main" className="flex lg:hidden flex-1 flex-col min-h-0">
         {/* 3D preview */}
         <div className="flex-shrink-0 h-[35dvh] min-h-[180px] max-h-[280px] relative border-b border-stone-200">
           <StonePreview ref={previewRef} design={designWithTextures} onItemDrag={handleItemDrag} />
@@ -407,6 +408,15 @@ export default function Builder() {
           </button>
         </div>
       </div>
+
+      {/* Footer — accessibility statement is reachable from every screen */}
+      <footer className="flex-shrink-0 border-t border-stone-200 bg-white px-3 py-1 flex items-center justify-center gap-2 text-[11px] text-stone-500">
+        <Link to="/accessibility" className="underline hover:text-stone-900">
+          הצהרת נגישות
+        </Link>
+        <span aria-hidden="true">·</span>
+        <span>הנגשה לפי ת״י 5568 AA</span>
+      </footer>
 
       {/* Photorealistic render modal */}
       <RenderModal
