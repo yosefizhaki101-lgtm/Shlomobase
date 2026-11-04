@@ -9,6 +9,13 @@ function hexToRgb(hex) {
   return [Math.round(c.r * 255), Math.round(c.g * 255), Math.round(c.b * 255)];
 }
 
+// Anisotropic filtering level for all generated stone textures — set by the
+// renderer so texture detail stays sharp at grazing angles instead of blurring.
+let TEX_ANISOTROPY = 8;
+export function setTextureAnisotropy(value) {
+  TEX_ANISOTROPY = Math.max(1, Math.min(16, value || 8));
+}
+
 function makeCanvasCtx(size) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -194,13 +201,16 @@ function heightToNormal(height, size, strength) {
   ctx.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(ctx.canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = TEX_ANISOTROPY;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
   return tex;
 }
 
 function toTexture(ctx) {
   const tex = new THREE.CanvasTexture(ctx.canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = TEX_ANISOTROPY;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
   return tex;
 }
 

@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildTombstone, disposeGroup } from '@/lib/tombstoneGeometry';
 import { createCemeteryEnvironment, createDesignGround } from '@/lib/cemeteryEnvironment';
+import { setTextureAnisotropy } from '@/lib/stoneTextures';
 import { loadGlbModels } from '@/lib/glbModelCache';
 
 const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) => {
@@ -76,13 +77,17 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     rendererRef.current = renderer;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Render at the screen's full resolution (up to 3x) so edges and engravings stay crisp
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = true;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.12;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // Texture detail stays sharp at grazing angles instead of turning mushy
+    setTextureAnisotropy(Math.min(16, renderer.capabilities.getMaxAnisotropy()));
     container.appendChild(renderer.domElement);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
@@ -270,7 +275,7 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
       const sun = new THREE.DirectionalLight(0xfff4e0, 3.5);
       sun.position.set(6, 10, 5);
       sun.castShadow = true;
-      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.mapSize.set(3072, 3072);
       sun.shadow.camera.near = 0.5;
       sun.shadow.camera.far = 40;
       sun.shadow.camera.left = -7;
@@ -307,7 +312,7 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
       const dir = new THREE.DirectionalLight(0xfff5e6, 3.2);
       dir.position.set(5, 9, 5);
       dir.castShadow = true;
-      dir.shadow.mapSize.set(2048, 2048);
+      dir.shadow.mapSize.set(3072, 3072);
       dir.shadow.camera.near = 0.5;
       dir.shadow.camera.far = 40;
       dir.shadow.camera.left = -7;
@@ -316,7 +321,7 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
       dir.shadow.camera.bottom = -7;
       dir.shadow.bias = -0.0004;
       dir.shadow.normalBias = 0.03;
-      dir.shadow.radius = 4;
+      dir.shadow.radius = 2;
       scene.add(dir);
       lightsRef.current.push(dir);
 
