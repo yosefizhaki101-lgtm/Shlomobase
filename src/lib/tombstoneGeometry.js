@@ -783,15 +783,45 @@ function buildHeadstoneOne({ W, L, y, stone, def, group, xOff = 0, zOff = 0, tex
       return decalResult(y + baseH + hsH + 0.1, m, rearZ, 0.15, hsW * 0.7, hsH * 0.6);
     }
     case 'headstone_open_book': {
-      const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.53 * scale)), hsD2 = 0.1 * scale * thickness;
-      const pg = sharpGeo(hsW / 2, hsH, hsD2);
-      const left = new THREE.Mesh(pg, mat);
-      left.rotation.y = -0.14;
-      place(group, left, new THREE.Vector3(cx - hsW / 4, y + hsH / 2, rearZ), 'headstone');
-      const right = new THREE.Mesh(pg, mat);
-      right.rotation.y = 0.14;
-      place(group, right, new THREE.Vector3(cx + hsW / 4, y + hsH / 2, rearZ), 'headstone');
-      return decalResult(y + hsH, left, rearZ, hsD2, hsW * 0.4, hsH * 0.7);
+      // שני לוחות אבן נפרדים (כמו שני חלקי ספר פתוח) על בסיס אחד — ולא לוח אחיד.
+      const hsW = (customW || (W * 0.85 * scale));
+      const hsH = (customH || (W * 0.53 * scale));
+      const pageD = 0.14 * scale * thickness;
+      const pedH = Math.min(0.1, Math.max(0.05, hsH * 0.08));
+      const spineW = hsW * 0.035;
+      const pageW = (hsW - spineW) / 2;
+      const tilt = 0.08;
+
+      // בסיס משותף שמרים את שני הלוחות כגוף אחד
+      place(group, new THREE.Mesh(sharpGeo(hsW * 1.02, pedH, pageD * 1.35), mat), new THREE.Vector3(cx, y + pedH / 2, rearZ), 'headstone');
+      const bodyY = y + pedH;
+      // שדרה מרכזית — סוגרת את המרווח בין הלוחות
+      place(group, new THREE.Mesh(sharpGeo(spineW, hsH, pageD), mat), new THREE.Vector3(cx, bodyY + hsH / 2, rearZ), 'headstone');
+
+      const leftX = cx - spineW / 2 - (pageW / 2) * Math.cos(tilt);
+      const rightX = cx + spineW / 2 + (pageW / 2) * Math.cos(tilt);
+      const pageZ = rearZ + (pageW / 2) * Math.sin(tilt);
+
+      const left = new THREE.Mesh(sharpGeo(pageW, hsH, pageD), mat);
+      left.rotation.y = -tilt;
+      place(group, left, new THREE.Vector3(leftX, bodyY + hsH / 2, pageZ), 'headstone');
+      const right = new THREE.Mesh(sharpGeo(pageW, hsH, pageD), mat);
+      right.rotation.y = tilt;
+      place(group, right, new THREE.Vector3(rightX, bodyY + hsH / 2, pageZ), 'headstone');
+
+      // הכיתוב נחרט על פני הלוח השמאלי, בגודל שמכסה את מלוא שטחו
+      const faceX = leftX - (pageD / 2) * Math.sin(tilt);
+      const faceZ = pageZ + (pageD / 2) * Math.cos(tilt);
+      const centerY = bodyY + hsH / 2;
+      return {
+        topY: bodyY + hsH,
+        decal: {
+          mesh: left,
+          pos: new THREE.Vector3(faceX, centerY, faceZ + 0.003),
+          look: new THREE.Vector3(faceX, centerY, faceZ - 0.1),
+          size: new THREE.Vector3(pageW * 0.92, hsH * 0.9, 0.3),
+        },
+      };
     }
     case 'headstone_chiseled_frame': {
       const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.67 * scale)), hsD3 = 0.18 * scale * thickness;
