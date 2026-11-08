@@ -121,7 +121,57 @@ function ornamentTexture(url) {
   return tex;
 }
 
+// פרסטים של גימור — ברק, חספוס והחזר אור של אותו חומר אבן
+const FINISH_PRESETS = {
+  matte:  { roughness: 0.86, clearcoat: 0,   clearcoatRoughness: 0.6,  metalness: 0.02, envMapIntensity: 0.7,  normal: 1.8 },
+  silk:   { roughness: 0.34, clearcoat: 0.45, clearcoatRoughness: 0.3, metalness: 0.04, envMapIntensity: 1.5,  normal: 0.8 },
+  polish: { roughness: 0.04, clearcoat: 1,   clearcoatRoughness: 0.02, metalness: 0.03, envMapIntensity: 2.6,  normal: 0.15, reflection: true },
+};
+
+// Applies a finish on top of the stone's own material: same colour and texture,
+// different gloss. "natural" keeps whatever the stone type defines.
+function withFinish(mat, stone) {
+  const finish = stone.finish;
+  if (!finish || finish === 'natural') return mat;
+  const rockEdges = finish === 'polish_rock_edges';
+  const p = FINISH_PRESETS[rockEdges ? 'polish' : finish];
+  if (!p) return mat;
+
+  const baseNormal = mat.normalScale ? mat.normalScale.x : 0.5;
+  mat.roughness = p.roughness;
+  if (mat.roughnessMap) mat.roughnessMap = null; // גימור אחיד — בלי מפת חספוס שמושכת למט
+  mat.metalness = p.metalness;
+  mat.envMapIntensity = p.envMapIntensity;
+  if (mat.isMeshPhysicalMaterial) {
+    mat.clearcoat = p.clearcoat;
+    mat.clearcoatRoughness = p.clearcoatRoughness;
+  }
+  if (mat.normalScale) mat.normalScale.set(baseNormal * p.normal, baseNormal * p.normal);
+  if (p.reflection) mat.envMap = getPolishedReflectionEnv();
+
+  if (rockEdges) {
+    // אותה אבן, אבל צדדים מחוספסים בסיתות — המשטח העליון והחזית נשארים מלוטשים.
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: mat.color ? mat.color.clone() : new THREE.Color(stone.color || '#ffffff'),
+      map: mat.map || null,
+      normalMap: mat.normalMap || null,
+      normalScale: new THREE.Vector2(baseNormal * 3.5, baseNormal * 3.5),
+      roughness: 0.95,
+      metalness: 0,
+      envMapIntensity: 0.6,
+    });
+    mat.userData.rockSideMat = rockMat;
+    mat.userData.polishFaces = [2, 4]; // +Y משטח עליון, +Z חזית
+  }
+  mat.needsUpdate = true;
+  return mat;
+}
+
 function stoneMat(stone, textureUrl) {
+  return withFinish(baseStoneMat(stone, textureUrl), stone);
+}
+
+function baseStoneMat(stone, textureUrl) {
   // Uploaded texture from admin — use as diffuse map (tinted by stone color) with procedural normal map for surface detail
   if (textureUrl) {
     const upTex = getUploadedTexture(textureUrl);
@@ -217,10 +267,11 @@ function plainMat(color, roughness = 0.8, metalness = 0) {
 
 function resolveStone(design) {
   const stone = STONE_TYPES.find((s) => s.id === design.stoneType) || STONE_TYPES[0];
+  const finish = design.finish || null;
   if (design.colorOverride) {
-    return { ...stone, color: design.colorOverride };
+    return { ...stone, color: design.colorOverride, finish };
   }
-  return stone;
+  return { ...stone, finish };
 }
 
 function resolveStoneForPart(design, field) {
@@ -228,13 +279,15 @@ function resolveStoneForPart(design, field) {
   const stone = STONE_TYPES.find((s) => s.id === stoneId) || STONE_TYPES[0];
   const colorField = field ? field.replace('Stone', 'Color') : null;
   const partColor = colorField ? design[colorField] : null;
+  const finishField = field ? field.replace('Stone', 'Finish') : null;
+  const finish = (finishField ? design[finishField] : null) || design.finish || null;
   if (partColor) {
-    return { ...stone, color: partColor };
+    return { ...stone, color: partColor, finish };
   }
   if (design.colorOverride) {
-    return { ...stone, color: design.colorOverride };
+    return { ...stone, color: design.colorOverride, finish };
   }
-  return stone;
+  return { ...stone, finish };
 }
 
 function resolveOverride(stone, overrideColor) {
@@ -343,6 +396,13 @@ function rockWallGeo(w, h, d, amt = 0.05, seed = 7) {
 const STEP_LIFT = { panel: 0, frame: 0.4, slab: 0.85, headstone: 1.25 };
 
 function place(group, mesh, pos, stepKey) {
+  // גימור "מבריק + צדדים מחוספסים": פאות הצד מקבלות חומר גס, המשטח העליון והחזית נשארים מלוטשים.
+  const sideMat = mesh.material && !Array.isArray(mesh.material) ? mesh.material.userData?.rockSideMat : null;
+  if (sideMat && mesh.geometry?.groups?.length >= 6) {
+    const polished = mesh.material.userData.polishFaces || [2, 4];
+    const base = mesh.material;
+    mesh.material = mesh.geometry.groups.map((_, i) => (polished.includes(i) ? base : sideMat));
+  }
   mesh.position.copy(pos);
   mesh.userData.rest = pos.clone();
   mesh.userData.explodeOffset = new THREE.Vector3(0, STEP_LIFT[stepKey] || 0, 0);

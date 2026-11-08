@@ -95,6 +95,21 @@
     "headstone_stone": {
       "type": "string"
     },
+    "finish": {
+      "type": "string"
+    },
+    "panel_finish": {
+      "type": "string"
+    },
+    "frame_finish": {
+      "type": "string"
+    },
+    "slab_finish": {
+      "type": "string"
+    },
+    "headstone_finish": {
+      "type": "string"
+    },
     "accessories": {
       "type": "object"
     },

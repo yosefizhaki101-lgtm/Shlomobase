@@ -10,6 +10,16 @@ export const COLORS = [
   { id: 'warm_beige', name: 'חברון', hex: '#E6DFCE', swatch: 'linear-gradient(135deg, #EFE9DA 0%, #D6CDB6 100%)' },
 ];
 
+// גימור פני האבן — משפיע על הברק והחספוס של אותו חומר, בלי לשנות את הגוון.
+// 'natural' = הגימור שמגיע עם סוג האבן (ברירת מחדל, לא משתנה).
+export const FINISHES = [
+  { id: 'natural', name: 'טבעי', desc: 'הגימור המקורי של האבן' },
+  { id: 'matte', name: 'מט', desc: 'משטח מט, ללא החזר אור' },
+  { id: 'silk', name: 'משי', desc: 'חצי מבריק, החזר אור עדין' },
+  { id: 'polish', name: 'מבריק', desc: 'ליטוש מלא, החזר אור חזק' },
+  { id: 'polish_rock_edges', name: 'מבריק + צדדים מחוספסים', desc: 'משטח עליון מלוטש וצדדים בסיתות גס' },
+];
+
 export const STONE_TYPES = [
   {
     id: 'black_granite',

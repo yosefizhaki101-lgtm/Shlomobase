@@ -1,7 +1,7 @@
-import { STONE_TYPES, COLORS } from '@/lib/tombstoneOptions';
+import { STONE_TYPES, COLORS, FINISHES } from '@/lib/tombstoneOptions';
 import { cn } from '@/lib/utils';
 
-export default function MaterialSelector({ selected, onSelect, colorOverride, onColorSelect }) {
+export default function MaterialSelector({ selected, onSelect, colorOverride, onColorSelect, finish, onFinishSelect }) {
   return (
     <div>
       <h4 className="text-[10px] font-medium text-stone-600 mb-1">חומר</h4>
@@ -57,6 +57,31 @@ export default function MaterialSelector({ selected, onSelect, colorOverride, on
                 style={{ background: c.swatch }}
               />
             ))}
+          </div>
+        </>
+      )}
+
+      {onFinishSelect && (
+        <>
+          <h4 className="text-[10px] font-medium text-stone-600 mb-1 mt-1">גימור</h4>
+          <div className="flex gap-1.5 overflow-x-auto pb-1.5 -mx-1 px-1" style={{ flexWrap: 'nowrap' }}>
+            {FINISHES.map((f) => {
+              const active = (finish || 'natural') === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  title={f.desc}
+                  onClick={() => onFinishSelect(f.id)}
+                  className={cn(
+                    'flex-shrink-0 rounded-lg border px-2 py-1 text-[10px] transition-colors whitespace-nowrap',
+                    active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300'
+                  )}
+                >
+                  {f.name}
+                </button>
+              );
+            })}
           </div>
         </>
       )}
