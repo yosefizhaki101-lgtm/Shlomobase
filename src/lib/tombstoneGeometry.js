@@ -242,7 +242,7 @@ function baseStoneMat(stone, textureUrl) {
     roughnessMap: t.roughnessMap,
     roughness: stone.roughness,
     metalness: stone.metalness || 0,
-    envMapIntensity: 1.5,
+    envMapIntensity: stone.envMapIntensity ?? 1.5,
   });
 }
 
