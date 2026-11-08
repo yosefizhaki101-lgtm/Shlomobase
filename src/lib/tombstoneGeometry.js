@@ -69,21 +69,46 @@ function applyBoxUV(geo, metersPerRepeat = 1.75, seed = 1) {
   geo.userData.boxUV = true;
 }
 
-// הפרדת עומק: פאות אנכיות (צדי הפלטה, המדרגות והבסיס) כהות ב-7% מהמשטח העליון,
-// כדי שכל אבן תיקרא כגוף נפרד ולא כמשטח אחד שטוח.
-function addSideShading(mat) {
+// מיפוי טריפלנרי במרחב העולם + הפרדת עומק:
+// 1. הטקסטורה נדגמת לפי קואורדינטות אמיתיות במטרים של כל פאה — אנכית או אופקית —
+//    כך שאף ציר לא נמתח ושום פאה לא נראית מרוחה.
+// 2. פאות אנכיות (צדי הפלטה, המדרגות והבסיס) כהות ב-7% מהמשטח העליון,
+//    כדי שכל אבן תיקרא כגוף נפרד ולא כמשטח אחד שטוח.
+function addStoneShader(mat) {
   mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTexScale = { value: 1 / (mat.userData.uvMeter || 1.75) };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying float vSideShade;')
+      .replace('#include <common>', '#include <common>\nvarying float vSideShade;\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
       .replace(
         '#include <begin_vertex>',
         '#include <begin_vertex>\nvSideShade = 0.93 + 0.07 * abs(normalize(objectNormal).y);'
+      )
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        vWNrm = normalize(mat3(modelMatrix) * objectNormal);`
       );
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vSideShade;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying float vSideShade;\nvarying vec3 vWPos;\nvarying vec3 vWNrm;\nuniform float uTexScale;'
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#ifdef USE_MAP
+        vec3 tN = normalize(vWNrm);
+        vec3 tw = pow(abs(tN), vec3(5.0));
+        tw /= max(0.0001, tw.x + tw.y + tw.z);
+        vec3 tp = vWPos * uTexScale;
+        diffuseColor *= texture2D(map, tp.zy) * tw.x
+                      + texture2D(map, tp.xz) * tw.y
+                      + texture2D(map, tp.xy) * tw.z;
+        #endif`
+      )
       .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vSideShade;');
   };
-  mat.customProgramCacheKey = () => 'stoneSideShade';
+  mat.customProgramCacheKey = () => 'stoneTriplanar';
   return mat;
 }
 
@@ -138,10 +163,12 @@ function getStoneMap(url) {
       };
       const dark = pick(0.02);   // גוון העורק
       const light = pick(0.97);  // גוון הבסיס
-      const BASE = 234, VEIN = 152;
-      const scale = (BASE - VEIN) / Math.max(12, light - dark);
+      const BASE = 236, VEIN = 165; // אפור בינוני — לא כמעט־שחור
+      const range = Math.max(12, light - dark);
       for (let i = 0, p = 0; i < px.length; i += 4, p++) {
-        const out = Math.max(120, Math.min(248, BASE - (light - lums[p]) * scale));
+        // עקומה שמחזירה את גוני הביניים לבסיס ומשאירה רק ליבות עורק דקות
+        const n = Math.max(0, Math.min(1, (light - lums[p]) / range));
+        const out = BASE - Math.pow(n, 1.45) * (BASE - VEIN);
         px[i] = Math.max(0, out - 2);
         px[i + 1] = out;
         px[i + 2] = Math.min(255, out + 3);
@@ -330,7 +357,7 @@ function baseStoneMat(stone, textureUrl) {
     // כל פאה של כל חלק — אותה טקסטורה ובאותו קנה מידה (חזרה אחת ≈ מטר אבן)
     mat.userData.boxUV = true;
     mat.userData.uvMeter = 1.75;
-    return addSideShading(mat);
+    return addStoneShader(mat);
   }
   const key = `${stone.kind}:${stone.color}`;
   let t = TEX_CACHE.get(key);
