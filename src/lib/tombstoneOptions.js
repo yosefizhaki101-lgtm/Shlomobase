@@ -1,6 +1,6 @@
 export const COLORS = [
   { id: 'white', name: 'לבן', hex: '#ffffff', swatch: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)' },
-  { id: 'light_grey', name: 'טורקי', hex: '#C9C7C6', swatch: 'linear-gradient(135deg, #DCDBD9 0%, #B5B1AF 100%)' },
+  { id: 'light_grey', name: 'טורקי', hex: '#DCDCDA', swatch: 'linear-gradient(135deg, #E7E7E5 0%, #C4C4C2 100%)' },
   { id: 'grey', name: 'סרדו', hex: '#9B9C9E', swatch: 'linear-gradient(135deg, #ABABAD 0%, #84868A 100%)' },
   { id: 'dark_grey', name: 'אפור כהה', hex: '#5d6364', swatch: 'linear-gradient(135deg, #6d7374 0%, #4d5354 100%)' },
   { id: 'black', name: 'שחור', hex: '#0a0a0a', swatch: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)' },
@@ -37,13 +37,13 @@ export const STONE_TYPES = [
   {
     id: 'turkish_marble',
     name: 'טורקי',
-    desc: 'שיש טורקי בגוון אפור־לבן עדין עם עננות דקות וגימור מבריק',
-    swatch: 'linear-gradient(135deg, #DCDBD9 0%, #B5B1AF 100%)',
+    desc: 'שיש טורקי בגוון אפור־לבן קריר עם ורידים דקים וגימור מבריק',
+    swatch: 'linear-gradient(135deg, #E7E7E5 0%, #C4C4C2 100%)',
     kind: 'cloud_grey',
-    color: '#C9C7C6',
-    roughness: 0.2,
+    color: '#DCDCDA',
+    roughness: 0.14,
     metalness: 0.02,
-    polish: 0.8,
+    polish: 0.9,
   },
   {
     id: 'hebron',
