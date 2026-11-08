@@ -229,9 +229,9 @@ function baseStoneMat(stone, textureUrl) {
       metalness: stone.metalness || 0,
       clearcoat: 0.8,
       clearcoatRoughness: 0.08,
-      envMapIntensity: 2.5,
+      envMapIntensity: stone.envMapIntensity ?? 2.5,
       sheen: 0.4,
-      sheenColor: new THREE.Color(0xfff5e8),
+      sheenColor: new THREE.Color(stone.sheenColor || 0xfff5e8),
     });
   }
   return new THREE.MeshStandardMaterial({
