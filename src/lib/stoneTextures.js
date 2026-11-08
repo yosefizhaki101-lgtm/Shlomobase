@@ -482,7 +482,7 @@ const PRESETS = {
   tuvza: { rockface: true, noiseScale: 2, octaves: 6, baseVar: 0.22, roughBase: 0.99, roughVar: 0.01, nStr: 3.0, cracks: true, flecks: true, microSpeckles: true },
   // אבן חברון — משטח חלק ואחיד (שמנת מלוטשת), עם גרעון עדין בלבד.
   // החספוס של הטובזה נשאר אך ורק במסגרות/צדדים, לא על פני הפלטה ואבן הראש.
-  hebron: { ridged: false, noiseScale: 7, octaves: 3, baseVar: 0.06, roughBase: 0.55, roughVar: 0.14, nStr: 0.25, microSpeckles: true, rustVeins: true },
+  hebron: { flowingMarble: true, lightVeins: true, veinMix: 0.16, veinColor: [202, 195, 183], baseVar: 0.085, roughBase: 0.42, roughVar: 0.1, nStr: 0.15, microSpeckles: true, repeat: 1 },
   bronze: { ridged: false, noiseScale: 10, octaves: 3, baseVar: 0.18, roughBase: 0.38, roughVar: 0.22, nStr: 0.6, patina: true },
   plaque: { ridged: false, noiseScale: 4, octaves: 3, baseVar: 0.25, roughBase: 0.45, roughVar: 0.2, nStr: 1.0 },
 };
