@@ -59,6 +59,24 @@ function applyBoxUV(geo, metersPerRepeat = 1) {
   geo.userData.boxUV = true;
 }
 
+// הפרדת עומק: פאות אנכיות (צדי הפלטה, המדרגות והבסיס) כהות ב-7% מהמשטח העליון,
+// כדי שכל אבן תיקרא כגוף נפרד ולא כמשטח אחד שטוח.
+function addSideShading(mat) {
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vSideShade;')
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvSideShade = 0.93 + 0.07 * abs(normalize(objectNormal).y);'
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vSideShade;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vSideShade;');
+  };
+  mat.customProgramCacheKey = () => 'stoneSideShade';
+  return mat;
+}
+
 // Stone photo texture, neutralised and lightened: the warm cast is removed so no
 // orange-brown patches appear on edges, and the contrast is compressed toward white
 // so the veins read thin and fine on light, uniform Turkish marble.
@@ -71,7 +89,8 @@ function getStoneMap(url) {
   cv.height = 4;
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  // אריח חוזר בשיקוף — מאפשר מיפוי לפי מטרים בלי שהקצוות ייצרו פסים כהים
+  tex.wrapS = tex.wrapT = THREE.MirroredRepeatWrapping;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   STONE_MAP_CACHE.set(url, { tex });
@@ -79,20 +98,43 @@ function getStoneMap(url) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
-    cv.width = img.width;
-    cv.height = img.height;
+    // חיתוך שוליים: פיקסלים כהים בקצה התמונה היו נמשכים לאורך הפאות כפסים כהים.
+    const inset = 0.04;
+    const sx = img.width * inset;
+    const sy = img.height * inset;
+    const sw = Math.max(2, img.width * (1 - inset * 2));
+    const sh = Math.max(2, img.height * (1 - inset * 2));
+    cv.width = Math.round(sw);
+    cv.height = Math.round(sh);
     const ctx = cv.getContext('2d');
-    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
     try {
       const data = ctx.getImageData(0, 0, cv.width, cv.height);
       const px = data.data;
-      const CONTRAST = 0.78; // darks pulled toward white → finer, lighter veining
-      for (let i = 0; i < px.length; i += 4) {
+      const lums = new Float32Array(px.length / 4);
+      const hist = new Uint32Array(256);
+      for (let i = 0, p = 0; i < px.length; i += 4, p++) {
         const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-        const out = 255 - (255 - lum) * CONTRAST;
+        lums[p] = lum;
+        hist[Math.min(255, Math.max(0, Math.round(lum)))]++;
+      }
+      // נרמול אדפטיבי: הבסיס הבהיר נקבע לפי האחוזון הגבוה, העורקים לפי האחוזון הנמוך —
+      // כך העורקים תמיד אפורים ונראים בבירור (כ-35% כהים מהבסיס) ולא נעלמים על רקע לבן.
+      const total = lums.length;
+      const pick = (q) => {
+        let acc = 0;
+        for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= total * q) return v; }
+        return 255;
+      };
+      const dark = pick(0.02);   // גוון העורק
+      const light = pick(0.97);  // גוון הבסיס
+      const BASE = 234, VEIN = 152;
+      const scale = (BASE - VEIN) / Math.max(12, light - dark);
+      for (let i = 0, p = 0; i < px.length; i += 4, p++) {
+        const out = Math.max(120, Math.min(248, BASE - (light - lums[p]) * scale));
         px[i] = Math.max(0, out - 2);
-        px[i + 1] = Math.max(0, out);
-        px[i + 2] = Math.min(255, out + 2);
+        px[i + 1] = out;
+        px[i + 2] = Math.min(255, out + 3);
       }
       ctx.putImageData(data, 0, 0);
     } catch { /* canvas tainted — the untinted photo is still drawn */ }
@@ -278,7 +320,7 @@ function baseStoneMat(stone, textureUrl) {
     // כל פאה של כל חלק — אותה טקסטורה ובאותו קנה מידה (חזרה אחת ≈ מטר אבן)
     mat.userData.boxUV = true;
     mat.userData.uvMeter = 1;
-    return mat;
+    return addSideShading(mat);
   }
   const key = `${stone.kind}:${stone.color}`;
   let t = TEX_CACHE.get(key);
