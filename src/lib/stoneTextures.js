@@ -471,18 +471,18 @@ const PRESETS = {
   marble: { flowingMarble: true, veinMix: 0.6, veinColor: [140, 135, 125], veinColor2: [110, 105, 95], veinColor3: [80, 75, 68], baseVar: 0.05, roughBase: 0.72, roughVar: 0.18, nStr: 0.4, repeat: 1 },
   turkish_grey: { ridged: false, noiseScale: 6, octaves: 3, banded: true, baseVar: 0.05, roughBase: 0.35, roughVar: 0.15, nStr: 0.3, linearVeins: true, repeat: 1 },
   turkish_tan: { flowingMarble: true, lightVeins: true, veinMix: 0.32, veinColor: [150, 126, 96], baseVar: 0.1, roughBase: 0.3, roughVar: 0.12, nStr: 0.35, flecks: true, repeat: 1 },
-  cloud_grey: { flowingMarble: true, lightVeins: true, veinMix: 0.22, veinColor: [188, 194, 202], baseVar: 0.05, roughBase: 0.3, roughVar: 0.1, nStr: 0.2, flecks: true, repeat: 1 },
+  cloud_grey: { flowingMarble: true, lightVeins: true, veinMix: 0.2, veinColor: [181, 177, 175], baseVar: 0.045, roughBase: 0.26, roughVar: 0.08, nStr: 0.18, flecks: true, repeat: 1 },
   pure_white_marble: { ridged: false, noiseScale: 6, octaves: 3, baseVar: 0.05, roughBase: 0.05, roughVar: 0.04, nStr: 0.15, repeat: 1, flecks: true },
   black_marble: { ridged: true, noiseScale: 14, octaves: 5, veinMix: 0.78, veinColor: [180, 175, 168], baseVar: 0.06, roughBase: 0.2, roughVar: 0.1, nStr: 0.7, flecks: true },
   mirror_black: { ridged: false, noiseScale: 18, octaves: 4, baseVar: 0.12, roughBase: 0.03, roughVar: 0.04, nStr: 0.22, flecks: true, crystalline: true },
   orion_blue: { flowingMarble: true, lightVeins: true, veinMix: 0.55, veinColor: [110, 118, 126], veinColor2: [140, 148, 158], baseVar: 0.08, roughBase: 0.15, roughVar: 0.1, nStr: 0.5, flecks: true, repeat: 1 },
-  halila: { flowingMarble: true, lightVeins: true, veinMix: 0.3, veinColor: [232, 213, 178], baseVar: 0.1, roughBase: 0.4, roughVar: 0.12, nStr: 0.18, microSpeckles: true, repeat: 1 },
+  halila: { flowingMarble: true, lightVeins: true, veinMix: 0.24, veinColor: [195, 192, 181], baseVar: 0.09, roughBase: 0.62, roughVar: 0.12, nStr: 0.3, microSpeckles: true, repeat: 1 },
   concrete: { ridged: false, noiseScale: 6, octaves: 4, baseVar: 0.4, roughBase: 0.78, roughVar: 0.2, nStr: 0.8, pores: true, cracks: true },
   sandstone: { ridged: false, noiseScale: 5, octaves: 3, banded: true, baseVar: 0.5, roughBase: 0.86, roughVar: 0.14, nStr: 1.4 },
   tuvza: { rockface: true, noiseScale: 2, octaves: 6, baseVar: 0.22, roughBase: 0.99, roughVar: 0.01, nStr: 3.0, cracks: true, flecks: true, microSpeckles: true },
   // אבן חברון — משטח חלק ואחיד (שמנת מלוטשת), עם גרעון עדין בלבד.
   // החספוס של הטובזה נשאר אך ורק במסגרות/צדדים, לא על פני הפלטה ואבן הראש.
-  hebron: { flowingMarble: true, lightVeins: true, veinMix: 0.16, veinColor: [202, 195, 183], baseVar: 0.085, roughBase: 0.42, roughVar: 0.1, nStr: 0.15, microSpeckles: true, repeat: 1 },
+  hebron: { flowingMarble: true, lightVeins: true, veinMix: 0.15, veinColor: [191, 180, 172], baseVar: 0.08, roughBase: 0.4, roughVar: 0.1, nStr: 0.15, microSpeckles: true, repeat: 1 },
   bronze: { ridged: false, noiseScale: 10, octaves: 3, baseVar: 0.18, roughBase: 0.38, roughVar: 0.22, nStr: 0.6, patina: true },
   plaque: { ridged: false, noiseScale: 4, octaves: 3, baseVar: 0.25, roughBase: 0.45, roughVar: 0.2, nStr: 1.0 },
 };
