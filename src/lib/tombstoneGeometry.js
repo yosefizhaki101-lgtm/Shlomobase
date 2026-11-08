@@ -191,6 +191,27 @@ function baseStoneMat(stone, textureUrl) {
       envMapIntensity: 1.5,
     });
   }
+  // Actual photo texture assigned to the stone type — used as the diffuse map (no flat colour),
+  // with the procedural map supplying only a subtle bump so the surface has real depth.
+  if (stone.textureUrl) {
+    const nKey = `normal:${stone.kind}:${stone.color}`;
+    let nTex = TEX_CACHE.get(nKey);
+    if (!nTex) {
+      nTex = makeStoneTextures(stone.kind, stone.color);
+      TEX_CACHE.set(nKey, nTex);
+    }
+    const photoMap = getUploadedTexture(stone.textureUrl);
+    photoMap.repeat.set(1, 1);
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#ffffff'),
+      map: photoMap,
+      normalMap: nTex.normalMap,
+      normalScale: new THREE.Vector2(nTex.nStr * 0.5, nTex.nStr * 0.5),
+      roughness: stone.roughness ?? 0.26,
+      metalness: stone.metalness || 0.02,
+      envMapIntensity: stone.envMapIntensity ?? 1.1,
+    });
+  }
   const key = `${stone.kind}:${stone.color}`;
   let t = TEX_CACHE.get(key);
   if (!t) {
