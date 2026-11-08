@@ -7,7 +7,7 @@ export const COLORS = [
   { id: 'red', name: 'אדום', hex: '#6F2024', swatch: 'linear-gradient(135deg, #7E2528 0%, #541418 100%)' },
   { id: 'blue', name: 'כחול', hex: '#33404F', swatch: 'linear-gradient(135deg, #3E4C5C 0%, #26303C 100%)' },
   { id: 'beige', name: 'חלילה', hex: '#D4BE97', swatch: 'linear-gradient(135deg, #E4D2B0 0%, #C3A87F 100%)' },
-  { id: 'warm_beige', name: 'חברון', hex: '#E6DFCE', swatch: 'linear-gradient(135deg, #EFE9DA 0%, #D6CDB6 100%)' },
+  { id: 'warm_beige', name: 'חברון', hex: '#E6E7E6', swatch: 'linear-gradient(135deg, #F6F6F4 0%, #DCDCDA 100%)' },
 ];
 
 // גימור פני האבן — משפיע על הברק והחספוס של אותו חומר, בלי לשנות את הגוון.
@@ -48,10 +48,10 @@ export const STONE_TYPES = [
   {
     id: 'hebron',
     name: 'חברון',
-    desc: 'אבן חברון שמנת מחוספסת - חריצי סיתות וורידים חלודים',
-    swatch: 'linear-gradient(135deg, #F4EEE2 0%, #DBD1BC 100%)',
+    desc: 'אבן חברון - גוון בהיר ואחיד עם עננות עדינה',
+    swatch: 'linear-gradient(135deg, #F6F6F4 0%, #DCDCDA 100%)',
     kind: 'hebron',
-    color: '#EDE6D9',
+    color: '#E6E7E6',
     roughness: 0.85,
     metalness: 0,
     polish: 0.05,
