@@ -402,7 +402,7 @@ function baseStoneMat(stone, textureUrl) {
       sheenColor: new THREE.Color(stone.sheenColor || 0xfff5e8),
     });
   }
-  return new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: t.map,
     normalMap: t.normalMap,
@@ -412,6 +412,14 @@ function baseStoneMat(stone, textureUrl) {
     metalness: stone.metalness || 0,
     envMapIntensity: stone.envMapIntensity ?? 1.5,
   });
+  // חלילה וחברון: מיפוי בקופסה וטריפלנרי במרחב העולם — קנה מידה אמיתי על כל פאה,
+  // כך הסיתות לא נמתח לפסים רחבים על צדי הקומות.
+  if (stone.kind === 'halila' || stone.kind === 'hebron') {
+    mat.userData.boxUV = true;
+    mat.userData.uvMeter = 1.75;
+    return addStoneShader(mat);
+  }
+  return mat;
 }
 
 function glassMat(tint = 0x88aacc, opacity = 0.4) {

@@ -173,6 +173,43 @@ function rockfaceHeight(size, seed) {
   return out;
 }
 
+// Chiseled split-face height map: small, angular tool strokes cut into flat facets.
+// Sharp breaks between neighbouring strokes, tiny chips knocked off the edges and only
+// a whisper of micro grain — no smooth, rounded waves anywhere.
+function chiselHeight(size, seed) {
+  const cell = 26;
+  const cols = Math.ceil(size / cell) + 2;
+  const out = new Float32Array(size * size);
+  const facet = new Float32Array(cols * cols);
+  const tiltX = new Float32Array(cols * cols);
+  const tiltY = new Float32Array(cols * cols);
+  for (let i = 0; i < facet.length; i++) {
+    facet[i] = Math.floor(hash(i * 5.3, i * 9.1, seed) * 5) / 4;
+    tiltX[i] = hash(i * 2.7, i * 4.1, seed + 3) - 0.5;
+    tiltY[i] = hash(i * 6.1, i * 8.3, seed + 5) - 0.5;
+  }
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cx = Math.floor(x / cell), cy = Math.floor(y / cell);
+      const gi = cy * cols + cx;
+      const fx = (x - cx * cell) / cell, fy = (y - cy * cell) / cell;
+      // Each stroke is a tilted plane — an angular chisel facet
+      let h = 0.5 + facet[gi] * 0.22 + (fx - 0.5) * tiltX[gi] * 0.5 + (fy - 0.5) * tiltY[gi] * 0.5;
+      // Crisp groove where two strokes meet
+      const edge = Math.min(fx, 1 - fx, fy, 1 - fy);
+      if (edge < 0.08) h -= (0.08 - edge) * 2.2;
+      // Small chips and knocked-off corners
+      const chip = hash(x * 9.7, y * 11.3, seed + 11);
+      if (chip > 0.988) h -= 0.2;
+      else if (chip < 0.01) h += 0.12;
+      // Whisper of micro grain so the surface is not mathematically flat
+      h += (hash(x * 3.1, y * 4.7, seed + 13) - 0.5) * 0.04;
+      out[y * size + x] = Math.max(0, Math.min(1, h));
+    }
+  }
+  return out;
+}
+
 function smoothstep(a, b, x) {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -476,13 +513,15 @@ const PRESETS = {
   black_marble: { ridged: true, noiseScale: 14, octaves: 5, veinMix: 0.78, veinColor: [180, 175, 168], baseVar: 0.06, roughBase: 0.2, roughVar: 0.1, nStr: 0.7, flecks: true },
   mirror_black: { ridged: false, noiseScale: 18, octaves: 4, baseVar: 0.12, roughBase: 0.03, roughVar: 0.04, nStr: 0.22, flecks: true, crystalline: true },
   orion_blue: { flowingMarble: true, lightVeins: true, veinMix: 0.55, veinColor: [110, 118, 126], veinColor2: [140, 148, 158], baseVar: 0.08, roughBase: 0.15, roughVar: 0.1, nStr: 0.5, flecks: true, repeat: 1 },
-  halila: { flowingMarble: true, lightVeins: true, veinMix: 0.18, veinColor: [181, 155, 118], baseVar: 0.11, roughBase: 0.72, roughVar: 0.12, nStr: 0.4, microSpeckles: true, repeat: 1 },
+  // אבן חלילה — בז'־דבש חם, משטח מושחז עם גרעון עדין וכתמים קטנים,
+  // וסיתות חד וזוויתי (chisel) לנרמול הצדדים.
+  halila: { chisel: true, softVeins: true, veinMix: 0.14, veinColor: [196, 166, 122], baseVar: 0.06, roughBase: 0.9, roughVar: 0.1, nStr: 0.8, microSpeckles: true, speckleDark: 0.88, repeat: 1 },
   concrete: { ridged: false, noiseScale: 6, octaves: 4, baseVar: 0.4, roughBase: 0.78, roughVar: 0.2, nStr: 0.8, pores: true, cracks: true },
   sandstone: { ridged: false, noiseScale: 5, octaves: 3, banded: true, baseVar: 0.5, roughBase: 0.86, roughVar: 0.14, nStr: 1.4 },
   tuvza: { rockface: true, noiseScale: 2, octaves: 6, baseVar: 0.22, roughBase: 0.99, roughVar: 0.01, nStr: 3.0, cracks: true, flecks: true, microSpeckles: true },
-  // אבן חברון — משטח חלק ואחיד (שמנת מלוטשת), עם גרעון עדין בלבד.
-  // החספוס של הטובזה נשאר אך ורק במסגרות/צדדים, לא על פני הפלטה ואבן הראש.
-  hebron: { flowingMarble: true, lightVeins: true, veinMix: 0.15, veinColor: [191, 180, 172], baseVar: 0.08, roughBase: 0.4, roughVar: 0.1, nStr: 0.15, microSpeckles: true, repeat: 1 },
+  // אבן חברון — שמנת־לבנה חמה עם עורקים ורדרדים עדינים וגוון אפור חיוור,
+  // משטח מושחז (honed) וסיתות חד לנרמול הצדדים.
+  hebron: { chisel: true, softVeins: true, veinMix: 0.1, veinColor: [222, 203, 195], veinColor2: [210, 212, 210], baseVar: 0.04, roughBase: 0.9, roughVar: 0.1, nStr: 0.75, microSpeckles: true, speckleDark: 0.9, repeat: 1 },
   bronze: { ridged: false, noiseScale: 10, octaves: 3, baseVar: 0.18, roughBase: 0.38, roughVar: 0.22, nStr: 0.6, patina: true },
   plaque: { ridged: false, noiseScale: 4, octaves: 3, baseVar: 0.25, roughBase: 0.45, roughVar: 0.2, nStr: 1.0 },
 };
@@ -494,7 +533,14 @@ export function makeStoneTextures(kind, baseColorHex) {
   const p = PRESETS[kind] || PRESETS.granite;
 
   let height;
-  if (p.rockface) {
+  let colorHeight = null;
+  let veinField = null;
+  if (p.chisel) {
+    // גימור מושחז (honed): מישור חלק עם גרעון עדין; הצדדים מקבלים סיתות חד וזוויתי.
+    height = chiselHeight(size, seed);
+    colorHeight = fbm(size, 26, 3, seed + 7);
+    if (p.softVeins) veinField = flowingMarble(size, seed + 29);
+  } else if (p.rockface) {
     height = rockfaceHeight(size, seed);
   } else if (p.flowingMarble) {
     height = flowingMarble(size, seed);
@@ -513,6 +559,9 @@ export function makeStoneTextures(kind, baseColorHex) {
     for (let x = 0; x < size; x++) {
       const i = y * size + x;
       let h = height[i];
+      // צבע האבן נלקח מגרעון עדין (או מעורקים עדינים) ולא מסיתות — כדי שהמשטח לא ייראה גלי
+      const hc = colorHeight ? colorHeight[i] : h;
+      const hv = veinField ? veinField[i] : hc;
       if (p.banded) {
         const band = 0.5 + 0.5 * Math.sin(y * 0.22 + height[i] * 4.5);
         h = h * 0.55 + band * 0.45;
@@ -540,23 +589,23 @@ export function makeStoneTextures(kind, baseColorHex) {
         }
       }
       let r = br, g = bg, b = bb;
-      const varAmt = (h - 0.5) * 2 * p.baseVar;
+      const varAmt = (hc - 0.5) * 2 * p.baseVar;
       r = Math.max(0, Math.min(255, r * (1 + varAmt)));
       g = Math.max(0, Math.min(255, g * (1 + varAmt)));
       b = Math.max(0, Math.min(255, b * (1 + varAmt)));
       if (p.veinMix) {
-        const v = smoothstep(0.45, 0.85, h);
+        const v = smoothstep(0.45, 0.85, hv);
         r = r * (1 - v * p.veinMix) + p.veinColor[0] * v * p.veinMix;
         g = g * (1 - v * p.veinMix) + p.veinColor[1] * v * p.veinMix;
         b = b * (1 - v * p.veinMix) + p.veinColor[2] * v * p.veinMix;
         if (p.veinColor2) {
-          const v2 = smoothstep(0.65, 0.96, h) * 0.42;
+          const v2 = smoothstep(0.65, 0.96, hv) * 0.42;
           r = r * (1 - v2) + p.veinColor2[0] * v2;
           g = g * (1 - v2) + p.veinColor2[1] * v2;
           b = b * (1 - v2) + p.veinColor2[2] * v2;
         }
         if (p.veinColor3) {
-          const v3 = smoothstep(0.78, 0.99, h) * 0.3;
+          const v3 = smoothstep(0.78, 0.99, hv) * 0.3;
           r = r * (1 - v3) + p.veinColor3[0] * v3;
           g = g * (1 - v3) + p.veinColor3[1] * v3;
           b = b * (1 - v3) + p.veinColor3[2] * v3;
@@ -634,7 +683,8 @@ export function makeStoneTextures(kind, baseColorHex) {
       }
       if (p.microSpeckles) {
         const ms = hash(x * 3.7, y * 3.7, seed + 44);
-        if (ms > 0.975) { r *= 0.55; g *= 0.55; b *= 0.55; }
+        const dark = p.speckleDark ?? 0.55;
+        if (ms > 0.975) { r *= dark; g *= dark; b *= dark; }
       }
       const idx = i * 4;
       md[idx] = r; md[idx + 1] = g; md[idx + 2] = b; md[idx + 3] = 255;
