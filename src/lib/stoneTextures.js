@@ -476,7 +476,7 @@ const PRESETS = {
   black_marble: { ridged: true, noiseScale: 14, octaves: 5, veinMix: 0.78, veinColor: [180, 175, 168], baseVar: 0.06, roughBase: 0.2, roughVar: 0.1, nStr: 0.7, flecks: true },
   mirror_black: { ridged: false, noiseScale: 18, octaves: 4, baseVar: 0.12, roughBase: 0.03, roughVar: 0.04, nStr: 0.22, flecks: true, crystalline: true },
   orion_blue: { flowingMarble: true, lightVeins: true, veinMix: 0.55, veinColor: [110, 118, 126], veinColor2: [140, 148, 158], baseVar: 0.08, roughBase: 0.15, roughVar: 0.1, nStr: 0.5, flecks: true, repeat: 1 },
-  halila: { ridged: false, noiseScale: 5, octaves: 4, baseVar: 0.3, roughBase: 0.88, roughVar: 0.1, nStr: 0.6, fossils: true, microSpeckles: true },
+  halila: { flowingMarble: true, lightVeins: true, veinMix: 0.3, veinColor: [232, 213, 178], baseVar: 0.1, roughBase: 0.4, roughVar: 0.12, nStr: 0.18, microSpeckles: true, repeat: 1 },
   concrete: { ridged: false, noiseScale: 6, octaves: 4, baseVar: 0.4, roughBase: 0.78, roughVar: 0.2, nStr: 0.8, pores: true, cracks: true },
   sandstone: { ridged: false, noiseScale: 5, octaves: 3, banded: true, baseVar: 0.5, roughBase: 0.86, roughVar: 0.14, nStr: 1.4 },
   tuvza: { rockface: true, noiseScale: 2, octaves: 6, baseVar: 0.22, roughBase: 0.99, roughVar: 0.01, nStr: 3.0, cracks: true, flecks: true, microSpeckles: true },
