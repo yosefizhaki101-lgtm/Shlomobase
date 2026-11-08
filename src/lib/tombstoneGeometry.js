@@ -39,12 +39,21 @@ function getUploadedTexture(url) {
 // Box (triplanar-style) UV projection: rewrites each geometry's UVs so the same
 // texture keeps an identical real-world scale on every face — top, front and sides —
 // with no smearing or stretching on long, thin parts.
-function applyBoxUV(geo, metersPerRepeat = 1) {
+function applyBoxUV(geo, metersPerRepeat = 1.75, seed = 1) {
   const pos = geo && geo.attributes && geo.attributes.position;
   if (!pos) return;
   if (!geo.attributes.normal) geo.computeVertexNormals();
   const nrm = geo.attributes.normal;
   const uv = new Float32Array(pos.count * 2);
+  // לכל חלק היסט אקראי וסיבוב קל (0-15°) — פורס את האריח אחרת בכל אבן
+  // ומונע חזרתיות, בעוד כיוון העורקים נשאר זהה על כל הפאות.
+  const rnd = (n) => {
+    const s = Math.sin(seed * 12.9898 + n * 78.233) * 43758.5453;
+    return s - Math.floor(s);
+  };
+  const ang = rnd(1) * (Math.PI / 12);
+  const ca = Math.cos(ang), sa = Math.sin(ang);
+  const offU = rnd(2) * 10, offV = rnd(3) * 10;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i)), nz = Math.abs(nrm.getZ(i));
@@ -52,8 +61,9 @@ function applyBoxUV(geo, metersPerRepeat = 1) {
     if (ny >= nx && ny >= nz) { u = x; v = z; }        // top / bottom faces
     else if (nx >= ny && nx >= nz) { u = z; v = y; }   // side faces
     else { u = x; v = y; }                             // front / back faces
-    uv[i * 2] = u / metersPerRepeat + 0.5;
-    uv[i * 2 + 1] = v / metersPerRepeat + 0.5;
+    const su = u / metersPerRepeat, sv = v / metersPerRepeat;
+    uv[i * 2] = su * ca - sv * sa + offU;
+    uv[i * 2 + 1] = su * sa + sv * ca + offV;
   }
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.userData.boxUV = true;
@@ -89,8 +99,8 @@ function getStoneMap(url) {
   cv.height = 4;
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  // אריח חוזר בשיקוף — מאפשר מיפוי לפי מטרים בלי שהקצוות ייצרו פסים כהים
-  tex.wrapS = tex.wrapT = THREE.MirroredRepeatWrapping;
+  // אריח חוזר (ללא שיקוף) — כיוון העורקים נשאר זהה על כל פאה
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   STONE_MAP_CACHE.set(url, { tex });
@@ -319,7 +329,7 @@ function baseStoneMat(stone, textureUrl) {
     });
     // כל פאה של כל חלק — אותה טקסטורה ובאותו קנה מידה (חזרה אחת ≈ מטר אבן)
     mat.userData.boxUV = true;
-    mat.userData.uvMeter = 1;
+    mat.userData.uvMeter = 1.75;
     return addSideShading(mat);
   }
   const key = `${stone.kind}:${stone.color}`;
@@ -532,7 +542,9 @@ function place(group, mesh, pos, stepKey) {
     ? mesh.material.find((m) => m && m.userData && m.userData.boxUV)
     : (mesh.material && mesh.material.userData?.boxUV ? mesh.material : null);
   if (mapped && mesh.geometry && !mesh.geometry.userData.boxUV) {
-    applyBoxUV(mesh.geometry, mapped.userData.uvMeter || 1);
+    // זרע קבוע לכל חלק (לפי מיקומו וסוג החלק) — ההיסט לא משתנה בין רינדורים
+    const seed = Math.abs(pos.x * 37.1 + pos.y * 71.3 + pos.z * 13.7) + (STEP_LIFT[stepKey] || 0) * 5.1 + 1;
+    applyBoxUV(mesh.geometry, mapped.userData.uvMeter || 1.75, seed);
   }
   // גימור "מבריק + צדדים מחוספסים": פאות הצד מקבלות חומר גס, המשטח העליון והחזית נשארים מלוטשים.
   const sideMat = mesh.material && !Array.isArray(mesh.material) ? mesh.material.userData?.rockSideMat : null;
