@@ -480,7 +480,9 @@ const PRESETS = {
   concrete: { ridged: false, noiseScale: 6, octaves: 4, baseVar: 0.4, roughBase: 0.78, roughVar: 0.2, nStr: 0.8, pores: true, cracks: true },
   sandstone: { ridged: false, noiseScale: 5, octaves: 3, banded: true, baseVar: 0.5, roughBase: 0.86, roughVar: 0.14, nStr: 1.4 },
   tuvza: { rockface: true, noiseScale: 2, octaves: 6, baseVar: 0.22, roughBase: 0.99, roughVar: 0.01, nStr: 3.0, cracks: true, flecks: true, microSpeckles: true },
-  hebron: { rockface: true, noiseScale: 3, octaves: 4, baseVar: 0.25, roughBase: 0.85, roughVar: 0.1, nStr: 2.5, cracks: true, rustVeins: true, horizontalGrooves: true },
+  // אבן חברון — משטח חלק ואחיד (שמנת מלוטשת), עם גרעון עדין בלבד.
+  // החספוס של הטובזה נשאר אך ורק במסגרות/צדדים, לא על פני הפלטה ואבן הראש.
+  hebron: { ridged: false, noiseScale: 7, octaves: 3, baseVar: 0.06, roughBase: 0.55, roughVar: 0.14, nStr: 0.25, microSpeckles: true, rustVeins: true },
   bronze: { ridged: false, noiseScale: 10, octaves: 3, baseVar: 0.18, roughBase: 0.38, roughVar: 0.22, nStr: 0.6, patina: true },
   plaque: { ridged: false, noiseScale: 4, octaves: 3, baseVar: 0.25, roughBase: 0.45, roughVar: 0.2, nStr: 1.0 },
 };
