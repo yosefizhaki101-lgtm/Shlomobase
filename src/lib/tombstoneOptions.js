@@ -41,10 +41,10 @@ export const STONE_TYPES = [
     swatch: 'linear-gradient(135deg, #E6EAEC 0%, #C2C8CB 100%)',
     kind: 'cloud_grey',
     color: '#D8DCDE',
-    roughness: 0.26,
-    metalness: 0.02,
+    roughness: 0.25,
+    metalness: 0.01,
     polish: 0.35,
-    envMapIntensity: 1.1,
+    envMapIntensity: 0.7,
     textureUrl: 'https://base44.app/api/apps/6ad48f32fcce9263fd99a9b8/files/mp/public/6ad48f32fcce9263fd99a9b8/8a07409d5_turkish-marble.jpg',
   },
   {

@@ -36,6 +36,72 @@ function getUploadedTexture(url) {
   return tex;
 }
 
+// Box (triplanar-style) UV projection: rewrites each geometry's UVs so the same
+// texture keeps an identical real-world scale on every face — top, front and sides —
+// with no smearing or stretching on long, thin parts.
+function applyBoxUV(geo, metersPerRepeat = 1) {
+  const pos = geo && geo.attributes && geo.attributes.position;
+  if (!pos) return;
+  if (!geo.attributes.normal) geo.computeVertexNormals();
+  const nrm = geo.attributes.normal;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i)), nz = Math.abs(nrm.getZ(i));
+    let u, v;
+    if (ny >= nx && ny >= nz) { u = x; v = z; }        // top / bottom faces
+    else if (nx >= ny && nx >= nz) { u = z; v = y; }   // side faces
+    else { u = x; v = y; }                             // front / back faces
+    uv[i * 2] = u / metersPerRepeat + 0.5;
+    uv[i * 2 + 1] = v / metersPerRepeat + 0.5;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.userData.boxUV = true;
+}
+
+// Stone photo texture, neutralised and lightened: the warm cast is removed so no
+// orange-brown patches appear on edges, and the contrast is compressed toward white
+// so the veins read thin and fine on light, uniform Turkish marble.
+const STONE_MAP_CACHE = new Map();
+function getStoneMap(url) {
+  let entry = STONE_MAP_CACHE.get(url);
+  if (entry) return entry.tex;
+  const cv = document.createElement('canvas');
+  cv.width = 4;
+  cv.height = 4;
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 8;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  STONE_MAP_CACHE.set(url, { tex });
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    cv.width = img.width;
+    cv.height = img.height;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    try {
+      const data = ctx.getImageData(0, 0, cv.width, cv.height);
+      const px = data.data;
+      const CONTRAST = 0.78; // darks pulled toward white → finer, lighter veining
+      for (let i = 0; i < px.length; i += 4) {
+        const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        const out = 255 - (255 - lum) * CONTRAST;
+        px[i] = Math.max(0, out - 2);
+        px[i + 1] = Math.max(0, out);
+        px[i + 2] = Math.min(255, out + 2);
+      }
+      ctx.putImageData(data, 0, 0);
+    } catch { /* canvas tainted — the untinted photo is still drawn */ }
+    tex.needsUpdate = true;
+  };
+  img.src = url;
+  return tex;
+}
+
 // Ornament artwork (line-art on white) drawn as an engraving: multiply blending
 // lets the white background disappear and the carved lines darken the stone.
 // Ornament artwork arrives as line-art on a white sheet. For engraving we throw the sheet
@@ -200,17 +266,19 @@ function baseStoneMat(stone, textureUrl) {
       nTex = makeStoneTextures(stone.kind, stone.color);
       TEX_CACHE.set(nKey, nTex);
     }
-    const photoMap = getUploadedTexture(stone.textureUrl);
-    photoMap.repeat.set(1, 1);
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: new THREE.Color('#ffffff'),
-      map: photoMap,
+      map: getStoneMap(stone.textureUrl),
       normalMap: nTex.normalMap,
-      normalScale: new THREE.Vector2(nTex.nStr * 0.5, nTex.nStr * 0.5),
-      roughness: stone.roughness ?? 0.26,
-      metalness: stone.metalness || 0.02,
-      envMapIntensity: stone.envMapIntensity ?? 1.1,
+      normalScale: new THREE.Vector2(nTex.nStr * 0.45, nTex.nStr * 0.45),
+      roughness: stone.roughness ?? 0.25,
+      metalness: stone.metalness ?? 0.01,
+      envMapIntensity: stone.envMapIntensity ?? 0.7,
     });
+    // כל פאה של כל חלק — אותה טקסטורה ובאותו קנה מידה (חזרה אחת ≈ מטר אבן)
+    mat.userData.boxUV = true;
+    mat.userData.uvMeter = 1;
+    return mat;
   }
   const key = `${stone.kind}:${stone.color}`;
   let t = TEX_CACHE.get(key);
@@ -417,6 +485,13 @@ function rockWallGeo(w, h, d, amt = 0.05, seed = 7) {
 const STEP_LIFT = { panel: 0, frame: 0.4, slab: 0.85, headstone: 1.25 };
 
 function place(group, mesh, pos, stepKey) {
+  // אבן עם טקסטורה אמיתית: מיפוי UV בקופסה כדי שכל פאה תקבל אותו קנה מידה אמיתי.
+  const mapped = Array.isArray(mesh.material)
+    ? mesh.material.find((m) => m && m.userData && m.userData.boxUV)
+    : (mesh.material && mesh.material.userData?.boxUV ? mesh.material : null);
+  if (mapped && mesh.geometry && !mesh.geometry.userData.boxUV) {
+    applyBoxUV(mesh.geometry, mapped.userData.uvMeter || 1);
+  }
   // גימור "מבריק + צדדים מחוספסים": פאות הצד מקבלות חומר גס, המשטח העליון והחזית נשארים מלוטשים.
   const sideMat = mesh.material && !Array.isArray(mesh.material) ? mesh.material.userData?.rockSideMat : null;
   if (sideMat && mesh.geometry?.groups?.length >= 6) {
@@ -529,11 +604,8 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
 
   // Smooth polished cap for rough frames — contrasts with the rugged exterior like the reference
   const capH = 0.018;
-  const capMat = useRock ? new THREE.MeshStandardMaterial({
-    color: new THREE.Color(resolvedStone.color),
-    roughness: 0.22,
-    metalness: 0.02,
-  }) : null;
+  // כיפת המסגרת מקבלת את אותו חומר וטקסטורה כמו שאר החלקים — בלי צבע אחיד שנשאר "לבן שטוח".
+  const capMat = useRock ? stoneMat(resolvedStone, textureUrl) : null;
 
   // Rock-pitched walls use rugged geometry; smooth walls use sharp-edged boxes
   const wallSideGeo = useRock
