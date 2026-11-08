@@ -15,7 +15,7 @@ import RenderModal from '@/components/builder/RenderModal';
 const emptyDesign = {
   cemeteryProfile: 'default',
   tombstoneType: 'regular',
-  stoneType: 'turkish_marble',
+  stoneType: 'black_granite',
   panel: ['panel_15'],
   frame: ['frame_25_rock'],
   slab: ['slab_8_smooth'],
