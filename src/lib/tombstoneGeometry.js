@@ -372,7 +372,44 @@ function stoneMat(stone, textureUrl, wild = false) {
   return withFinish(baseStoneMat(eff, textureUrl), eff);
 }
 
+// טובזה אפור: תמונת אבן גיר אמיתית אחת, מיפוי במרחב העולם (כ-1 מטר לחזרה),
+// וחומר אחד משותף לכל החלקים — בלי תבנית פרוצדורלית ובלי ברק.
+const LIMESTONE_TEX_CACHE = new Map();
+const LIMESTONE_MAT_CACHE = new Map();
+
+function getLimestoneTexture(url) {
+  let tex = LIMESTONE_TEX_CACHE.get(url);
+  if (tex) return tex;
+  tex = new THREE.TextureLoader().load(url);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  LIMESTONE_TEX_CACHE.set(url, tex);
+  return tex;
+}
+
+function getLimestoneMaterial(stone) {
+  const url = stone.limestoneTexture;
+  let mat = LIMESTONE_MAT_CACHE.get(url);
+  if (mat) return mat;
+  mat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map: getLimestoneTexture(url),
+    roughness: 0.6,
+    metalness: 0,
+    envMapIntensity: 0.1,
+  });
+  mat.userData.boxUV = true;
+  mat.userData.uvMeter = 1.0;
+  addStoneShader(mat);
+  LIMESTONE_MAT_CACHE.set(url, mat);
+  return mat;
+}
+
 function baseStoneMat(stone, textureUrl) {
+  // טובזה אפור — טקסטורת אבן אמיתית, חומר משותף אחד לכל המשטחים
+  if (stone.limestoneTexture) return getLimestoneMaterial(stone);
   // Uploaded texture from admin — use as diffuse map (tinted by stone color) with procedural normal map for surface detail
   if (textureUrl) {
     const upTex = getUploadedTexture(textureUrl);

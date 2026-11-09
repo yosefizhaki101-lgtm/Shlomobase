@@ -18,7 +18,7 @@ const STONE_DESC = {
   red_stone: 'rich deep red granite',
   orion_belen: 'Orion Blue granite, dark blue-black with silver streaks',
   white_marble: 'white Carrara marble with fine elegant grey veining',
-  grey_tuvza: 'grey rough-pitched quarried stone with visible mortar lines',
+  grey_tuvza: 'calm light warm-grey honed limestone with very fine soft grain and no pattern',
 };
 
 const TOMBSTONE_TYPE_DESC = {
