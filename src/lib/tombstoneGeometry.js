@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { makeStoneTextures } from '@/lib/stoneTextures';
 import { getPolishedReflectionEnv } from '@/lib/cemeteryEnvironment';
+import { getSardoGraniteMaterial, isSardoGranite } from '@/lib/sardoGranite';
 import { makeTextTexture } from '@/lib/tombstoneText';
 import { buildNerHouse, getNerHouseFootprint, buildMountedCandleHousing } from '@/lib/nerHouseGeometry';
 import { buildSpeckledVase, buildTulipVase, buildCandleHouse } from '@/lib/accessoryModels';
@@ -334,53 +335,7 @@ function withFinish(mat, stone) {
 }
 
 // ---------------------------------------------------------------------------
-// גרניט סרדו — חומר אחד, משותף לכל המצבה.
-// נבנה מאפס: MeshStandardMaterial פשוט עם צילום האבן בלבד, בלי שיידר מותאם,
-// בלי מפות לכל חלק ובלי גוון. כל משושה במצבה מקבל את אותו מופע בדיוק.
-// ---------------------------------------------------------------------------
-let SARDO_MATERIAL = null;
-
-function sardoStone() {
-  return STONE_TYPES.find((s) => s.id === 'sardo');
-}
-
-function isSardoGranite(stone) {
-  return !!stone && stone.id === 'sardo';
-}
-
-export function getSardoGraniteMaterial() {
-  if (SARDO_MATERIAL) return SARDO_MATERIAL;
-  const stone = sardoStone();
-  const tex = new THREE.TextureLoader().load(stone.textureUrl, (loaded) => {
-    // הטקסטורה נטענה — מבטלים את גוון הביניים כדי שלא יהיה שום טינט על האבן.
-    if (SARDO_MATERIAL) {
-      SARDO_MATERIAL.color.set('#ffffff');
-      SARDO_MATERIAL.needsUpdate = true;
-    }
-    loaded.colorSpace = THREE.SRGBColorSpace;
-    loaded.needsUpdate = true;
-  });
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-
-  const mat = new THREE.MeshStandardMaterial({
-    // גוון ביניים אפור עד שהתמונה נטענת — אף פעם לא צבע זר על פאה.
-    color: new THREE.Color('#b9bcbe'),
-    map: tex,
-    roughness: 0.4,
-    metalness: 0,
-    envMapIntensity: 0.35,
-  });
-  mat.userData.isStoneMaterial = true;
-  mat.userData.sardo = true;
-  // מיפוי במרחב העולם: כל משולש מקבל את ההיטל שלו לפי הנורמל שלו (ראו applyFaceUV)
-  mat.userData.boxUV = true;
-  mat.userData.uvMeter = 0.9;
-  SARDO_MATERIAL = mat;
-  return mat;
-}
+// גרניט סרדו — חומר אחד, משותף לכל המצבה (ראו @/lib/sardoGranite).
 
 function stoneMat(stone, textureUrl) {
   // סרדו: אותו מופע חומר בדיוק לכל חלק — בלי גימור, בלי טקסטורה לכל חלק ובלי גוון.
