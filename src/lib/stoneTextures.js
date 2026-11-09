@@ -289,7 +289,6 @@ function heightToNormal(height, size, strength) {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = TEX_ANISOTROPY;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.userData.shared = true;
   return tex;
 }
 
@@ -298,8 +297,6 @@ function toTexture(ctx) {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = TEX_ANISOTROPY;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
-  // הטקסטורה נשמרת במטמון ומשותפת לכל הבניות — אין לשחרר אותה בסילוק המודל
-  tex.userData.shared = true;
   return tex;
 }
 
@@ -557,8 +554,6 @@ function drawMarbleVeinsRough(ctx, size, seed) {
 
 const PRESETS = {
   granite: { ridged: false, noiseScale: 4, octaves: 4, baseVar: 0.5, roughBase: 0.62, roughVar: 0.28, nStr: 1.0, flecks: true, crystalline: true, denseFlecks: true },
-  // גרניט אדום מלוטש — גוון אדום עמוק עם נמרור מלח־פלפל צפוף ועדין: נקודות כהות, בהירות וורדרדות
-  red_granite: { ridged: false, noiseScale: 3, octaves: 4, baseVar: 0.2, roughBase: 0.16, roughVar: 0.1, nStr: 0.55, flecks: true, denseFlecks: true, fleckShift: 0.03, roseFlecks: true, repeat: 1 },
   marble: { flowingMarble: true, veinMix: 0.6, veinColor: [140, 135, 125], veinColor2: [110, 105, 95], veinColor3: [80, 75, 68], baseVar: 0.05, roughBase: 0.72, roughVar: 0.18, nStr: 0.4, repeat: 1 },
   turkish_grey: { ridged: false, noiseScale: 6, octaves: 3, banded: true, baseVar: 0.05, roughBase: 0.35, roughVar: 0.15, nStr: 0.3, linearVeins: true, repeat: 1 },
   turkish_tan: { flowingMarble: true, lightVeins: true, veinMix: 0.32, veinColor: [150, 126, 96], baseVar: 0.1, roughBase: 0.3, roughVar: 0.12, nStr: 0.35, flecks: true, repeat: 1 },
@@ -688,7 +683,7 @@ export function makeStoneTextures(kind, baseColorHex) {
         const f = hash(x, y, seed + 5);
         const f2 = hash(x * 3.1, y * 3.1, seed + 8);
         // denseFlecks (גרניט אדום מלוטש) — נקודות שחורות ולבנות בולטות יותר
-        const shift = p.fleckShift !== undefined ? p.fleckShift : (p.denseFlecks ? 0.014 : 0);
+        const shift = p.denseFlecks ? 0.014 : 0;
         if (f > 0.993 - shift) {
           // White quartz — bright crystalline fleck
           r = Math.min(255, r * 0.3 + 225 * 0.7);
@@ -711,20 +706,6 @@ export function makeStoneTextures(kind, baseColorHex) {
         } else if (f > 0.955 - shift) {
           // Subtle bright crystal facet
           r = Math.min(255, r * 1.25); g = Math.min(255, g * 1.25); b = Math.min(255, b * 1.25);
-        }
-      }
-      if (p.roseFlecks) {
-        // נמרור צפוף של גרניט אדום: גרגרים ורודים בהירים וגרגרים כהים, עדינים וקרובים זה לזה
-        const rf = hash(x * 5.3, y * 5.3, seed + 12);
-        const rf2 = hash(x * 2.1, y * 2.1, seed + 14);
-        if (rf > 0.94) {
-          r = Math.min(255, r * 0.32 + 186 * 0.68);
-          g = Math.min(255, g * 0.32 + 116 * 0.68);
-          b = Math.min(255, b * 0.32 + 110 * 0.68);
-        } else if (rf < 0.062) {
-          r *= 0.42; g *= 0.4; b *= 0.4;
-        } else if (rf > 0.9 && rf2 > 0.5) {
-          r = Math.min(255, r * 1.18); g = Math.min(255, g * 1.14); b = Math.min(255, b * 1.14);
         }
       }
       if (p.pores) {

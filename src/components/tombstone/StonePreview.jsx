@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { buildTombstone, disposeGroup, onStoneTextureReady } from '@/lib/tombstoneGeometry';
+import { buildTombstone, disposeGroup } from '@/lib/tombstoneGeometry';
 import { createCemeteryEnvironment, createDesignGround } from '@/lib/cemeteryEnvironment';
 import { setTextureAnisotropy } from '@/lib/stoneTextures';
 import { loadGlbModels } from '@/lib/glbModelCache';
@@ -25,9 +25,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
   const [glbReady, setGlbReady] = useState(0);
   const [exploded, setExploded] = useState(false);
   const [mode, setMode] = useState('design');
-  // אבן שהתמונה שלה סיימה להיטען — בונים מחדש כדי שהגוון יופיע מיד
-  const [texReady, setTexReady] = useState(0);
-  useEffect(() => onStoneTextureReady(() => setTexReady((n) => n + 1)), []);
 
   // High-resolution photorealistic render: temporarily scales the renderer to 2x,
   // renders one frame, captures the canvas, then restores original size.
@@ -458,7 +455,6 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
     design.nerHouseOffsetX,
     design.nerHouseOffsetZ,
     glbReady,
-    texReady,
   ]);
 
   const toggleExplode = () => {
