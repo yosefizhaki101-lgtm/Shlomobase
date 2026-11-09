@@ -41,13 +41,6 @@ function drawText(ctx, text, x, y, style, stone) {
       ctx.shadowBlur = 2;
       ctx.shadowOffsetY = -1.5;
       ctx.fillText(text, x, y - 1);
-    } else if (stone.kind === 'sardo_granite') {
-      // גרניט סרדו: כיתוב פחם כהה וחד, כמו חריטה מלאה בצבע כהה
-      ctx.fillStyle = '#2b2b2c';
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
-      ctx.shadowBlur = 2;
-      ctx.shadowOffsetY = 1;
-      ctx.fillText(text, x, y);
     } else {
       // On light stone: darkened recessed letters
       ctx.fillStyle = shade(stone.color || '#e8e6e1', -75);
