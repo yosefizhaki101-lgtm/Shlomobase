@@ -112,6 +112,45 @@ function addStoneShader(mat) {
   return mat;
 }
 
+// גרניט סרדו: מיפוי טריפלנרי במרחב העולם — הגרעון באותו גודל אמיתי על כל פאה.
+// המשטחים האופקיים מקבלים גימור מושחז (חספוס ~0.34) והפאות האנכיות גסות יותר (~0.52).
+function addGraniteShader(mat) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTexScale = { value: 1 / (mat.userData.uvMeter || 1.75) };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        vWNrm = normalize(mat3(modelMatrix) * objectNormal);`
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWNrm;\nuniform float uTexScale;'
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#ifdef USE_MAP
+        vec3 tN = normalize(vWNrm);
+        vec3 tw = pow(abs(tN), vec3(5.0));
+        tw /= max(0.0001, tw.x + tw.y + tw.z);
+        vec3 tp = vWPos * uTexScale;
+        diffuseColor *= texture2D(map, tp.zy) * tw.x
+                      + texture2D(map, tp.xz) * tw.y
+                      + texture2D(map, tp.xy) * tw.z;
+        #endif`
+      )
+      .replace(
+        '#include <roughnessmap_fragment>',
+        'float roughnessFactor = mix(0.52, 0.34, abs(normalize(vWNrm).y));'
+      );
+  };
+  mat.customProgramCacheKey = () => 'graniteTriplanar';
+  return mat;
+}
+
 // Stone photo texture, neutralised and lightened: the warm cast is removed so no
 // orange-brown patches appear on edges, and the contrast is compressed toward white
 // so the veins read thin and fine on light, uniform Turkish marble.
@@ -364,6 +403,21 @@ function baseStoneMat(stone, textureUrl) {
   if (!t) {
     t = makeStoneTextures(stone.kind, stone.color);
     TEX_CACHE.set(key, t);
+  }
+  // גרניט סרדו — גרעון מלח ופלפל אחיד על כל פאה, גימור מושחז במשטחים ופאות גסות יותר.
+  if (stone.kind === 'sardo_granite') {
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: t.map,
+      normalMap: t.normalMap,
+      normalScale: new THREE.Vector2(t.nStr, t.nStr),
+      roughness: 0.34,
+      metalness: 0.04,
+      envMapIntensity: 1.0,
+    });
+    mat.userData.boxUV = true;
+    mat.userData.uvMeter = 1.75;
+    return addGraniteShader(mat);
   }
   const isMirror = stone.polish >= 0.95;
   if (isMirror) {
@@ -673,6 +727,16 @@ function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = nul
       break;
   }
   return { topY: y + h };
+}
+
+// פס גרניט שחור מלוטש (2.5 ס"מ) בין הקומות — קו הצללה דק ומוכנס פנימה,
+// כמו במצבות הגרניט האמיתיות.
+function buildBlackInsert({ W, L, y, group }) {
+  const blackStone = STONE_TYPES.find((s) => s.id === 'black_granite') || STONE_TYPES[0];
+  const mat = stoneMat(blackStone);
+  const t = 0.025;
+  place(group, new THREE.Mesh(sharpGeo(W + 0.16, t, L + 0.09), mat), new THREE.Vector3(0, y + t / 2, 0), 'frame');
+  return y + t;
 }
 
 function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null }) {
@@ -1561,8 +1625,12 @@ export function buildTombstone(design, glbModels = null) {
     }
   }
 
+  // גרניט סרדו: פס שחור דק בין הקומות (מתחת למסגרת/גוש האמצעי ומתחת לפלטה העליונה)
+  const sardoBody = [design.stoneType, design.panelStone, design.frameStone, design.slabStone].includes('sardo');
+
   // Frame layers — support multiple stacked frames (e.g., raise + frame)
   const frameLayers = Array.isArray(design.frame) ? design.frame : [design.frame];
+  if (sardoBody && frameLayers.length) y = buildBlackInsert({ W, L, y, group });
   for (let fi = 0; fi < frameLayers.length; fi++) {
     const frameId = frameLayers[fi];
     const fDef = withUserColor(FRAMES.find((f) => f.id === frameId) || FRAMES[0], design.frameStone || design.frameColor);
@@ -1578,6 +1646,7 @@ export function buildTombstone(design, glbModels = null) {
 
   // Slab layers — support multiple stacked slabs
   const slabLayers = Array.isArray(design.slab) ? design.slab : [design.slab];
+  if (sardoBody && slabLayers.length) y = buildBlackInsert({ W, L, y, group });
   for (let si = 0; si < slabLayers.length; si++) {
     const slabId = slabLayers[si];
     const sDef = withUserColor(SLABS.find((s) => s.id === slabId) || SLABS[0], design.slabStone || design.slabColor);

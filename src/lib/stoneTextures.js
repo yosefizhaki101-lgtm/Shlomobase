@@ -526,11 +526,59 @@ const PRESETS = {
   plaque: { ridged: false, noiseScale: 4, octaves: 3, baseVar: 0.25, roughBase: 0.45, roughVar: 0.2, nStr: 1.0 },
 };
 
+// גרניט סרדו — בסיס אפור קריר (#B8B8B8) עם גרעון "מלח ופלפל" עדין:
+// גבישים זעירים ואחידים של שחור, אפור כהה, אפור ולבן בגודל 1-3 מ"מ.
+// בלי עורקים, בלי גלים ובלי כתמי צבע — טקסטורה אחידה לחלוטין.
+function sardoGrainMaps(size, seed) {
+  const base = 192; // ממוצע התמונה ~#B8B8B8 אחרי הגרעון הכהה
+  const soft = fbm(size, 48, 3, seed + 3);
+  const mctx = makeCanvasCtx(size);
+  const mimg = mctx.createImageData(size, size);
+  const md = mimg.data;
+  const rctx = makeCanvasCtx(size);
+  const rimg = rctx.createImageData(size, size);
+  const rd = rimg.data;
+  const height = new Float32Array(size * size);
+  const cell = 2; // ~1.7 מ"מ לפיקסל במפה → גביש של 2-4 מ"מ
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x;
+      const cx = Math.floor(x / cell), cy = Math.floor(y / cell);
+      const c = hash(cx * 1.7, cy * 2.3, seed);
+      const c2 = hash(cx * 3.1, cy * 4.3, seed + 9);
+      const fine = hash(x * 1.3, y * 1.9, seed + 21);
+      let v = base + (soft[i] - 0.5) * 8 + (fine - 0.5) * 7;
+      let h = 0.5;
+      if (c > 0.962) { v = 233; h = 0.74; }          // גביש קוורץ לבן
+      else if (c > 0.9) { v = 208; h = 0.63; }       // גביש בהיר
+      else if (c < 0.032) { v = 42; h = 0.16; }      // גביש שחור
+      else if (c < 0.095) { v = 98; h = 0.3; }       // אפור כהה
+      else if (c < 0.21) { v = 152; h = 0.4; }       // אפור בינוני
+      if (h === 0.5 && c2 > 0.99) { v = 66; h = 0.22; } // כתם שחור זעיר נוסף
+      height[i] = h + (fine - 0.5) * 0.06;
+      const idx = i * 4;
+      md[idx] = Math.max(0, Math.min(255, v - 2));
+      md[idx + 1] = Math.max(0, Math.min(255, v));
+      md[idx + 2] = Math.max(0, Math.min(255, v + 3));
+      md[idx + 3] = 255;
+      const rv = Math.round((0.4 + (0.5 - Math.abs(h - 0.5)) * 0.14) * 255);
+      rd[idx] = rv; rd[idx + 1] = rv; rd[idx + 2] = rv; rd[idx + 3] = 255;
+    }
+  }
+  mctx.putImageData(mimg, 0, 0);
+  rctx.putImageData(rimg, 0, 0);
+  const map = toTexture(mctx);
+  const roughnessMap = toTexture(rctx);
+  const normalMap = heightToNormal(height, size, 0.5);
+  return { map, normalMap, roughnessMap, nStr: 0.35 };
+}
+
 export function makeStoneTextures(kind, baseColorHex) {
   const size = 1024;
   const [br, bg, bb] = hexToRgb(baseColorHex);
   const seed = (br * 7 + bg * 13 + bb * 3 + kind.length * 31) || 12345;
   const p = PRESETS[kind] || PRESETS.granite;
+  if (kind === 'sardo_granite') return sardoGrainMaps(size, seed);
 
   let height;
   let colorHeight = null;
