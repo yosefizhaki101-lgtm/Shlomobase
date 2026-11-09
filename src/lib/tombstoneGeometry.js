@@ -325,9 +325,6 @@ function withFinish(mat, stone) {
       roughness: 0.95,
       metalness: 0,
       envMapIntensity: 0.6,
-      polygonOffset: true,
-      polygonOffsetFactor: 1,
-      polygonOffsetUnits: 1,
     });
     mat.userData.rockSideMat = rockMat;
     mat.userData.polishFaces = [2, 4]; // +Y משטח עליון, +Z חזית
@@ -363,9 +360,7 @@ export function getSardoGraniteMaterial() {
     loaded.colorSpace = THREE.SRGBColorSpace;
     loaded.needsUpdate = true;
   });
-  // אריח חוזר וקנה מידה פרופורציונלי — הדופן לא נמתחת ולא נראית מרוחה
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(4, 4);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
@@ -374,14 +369,9 @@ export function getSardoGraniteMaterial() {
     // גוון ביניים אפור עד שהתמונה נטענת — אף פעם לא צבע זר על פאה.
     color: new THREE.Color('#b9bcbe'),
     map: tex,
-    // מראה מט־מלוטש של גרניט מלוטשת (לפי תמונת האבן)
     roughness: 0.4,
-    metalness: 0.05,
+    metalness: 0,
     envMapIntensity: 0.35,
-    // מונע ריצוד (Z-Fighting) בין השכבות החופפות
-    polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
   });
   mat.userData.isStoneMaterial = true;
   mat.userData.sardo = true;
@@ -397,10 +387,6 @@ function stoneMat(stone, textureUrl) {
   if (isSardoGranite(stone)) return getSardoGraniteMaterial();
   const mat = withFinish(baseStoneMat(stone, textureUrl), stone);
   mat.userData.isStoneMaterial = true;
-  // כל חומר אבן: הזזת עומק אחידה כדי שלא ייווצר ריצוד בין פאות חופפות
-  mat.polygonOffset = true;
-  mat.polygonOffsetFactor = 1;
-  mat.polygonOffsetUnits = 1;
   return mat;
 }
 
