@@ -181,6 +181,48 @@ function getStoneMap(url) {
   return tex;
 }
 
+// גרניט "מלח ופלפל" מתמונה: כל פיקסל מומר לגוון אפור אחיד לפי הבהירות בלבד,
+// כך שאין כתמים כחולים/כתומים — הבסיס בהיר אחיד והנקודות כהות, בדיוק כמו הדגימה.
+const RAW_MAP_CACHE = new Map();
+function getRawStoneMap(url) {
+  let tex = RAW_MAP_CACHE.get(url);
+  if (tex) return tex;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 4;
+  tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 8;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  RAW_MAP_CACHE.set(url, tex);
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    cv.width = img.width;
+    cv.height = img.height;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    try {
+      const data = ctx.getImageData(0, 0, cv.width, cv.height);
+      const px = data.data;
+      const LIGHT = 214, DARK = 58; // #D6D6D6 בסיס, #3A3A3A נקודות
+      for (let i = 0; i < px.length; i += 4) {
+        const lum = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255;
+        const t = Math.min(1, Math.max(0, (lum - 0.22) / 0.5));
+        const v = DARK + (LIGHT - DARK) * Math.pow(t, 1.15);
+        px[i] = v;
+        px[i + 1] = v;
+        px[i + 2] = v;
+      }
+      ctx.putImageData(data, 0, 0);
+    } catch { /* canvas tainted — נעשה שימוש בצילום המקורי */ }
+    tex.needsUpdate = true;
+  };
+  img.src = url;
+  return tex;
+}
+
 // Ornament artwork (line-art on white) drawn as an engraving: multiply blending
 // lets the white background disappear and the carved lines darken the stone.
 // Ornament artwork arrives as line-art on a white sheet. For engraving we throw the sheet
@@ -341,23 +383,16 @@ function baseStoneMat(stone, textureUrl) {
   if (stone.textureUrl) {
     // תמונת אבן "כמו שהיא" — משתמשת בצילום המקורי בלי עיבוד גוונים (למשל גרניט מנומר)
     if (stone.rawTexture) {
-      const nKeyRaw = `normal:${stone.kind}:${stone.color}`;
-      let nTexRaw = TEX_CACHE.get(nKeyRaw);
-      if (!nTexRaw) {
-        nTexRaw = makeStoneTextures(stone.kind, stone.color);
-        TEX_CACHE.set(nKeyRaw, nTexRaw);
-      }
+      // מט, אחיד, בלי ברק ובלי החזרי סביבה — כדי שלא ייווצרו כתמים כהים/כחולים בפינות
       const rawMat = new THREE.MeshStandardMaterial({
         color: new THREE.Color('#ffffff'),
-        map: getUploadedTexture(stone.textureUrl),
-        normalMap: nTexRaw.normalMap,
-        normalScale: new THREE.Vector2(nTexRaw.nStr * 0.3, nTexRaw.nStr * 0.3),
-        roughness: stone.roughness ?? 0.9,
+        map: getRawStoneMap(stone.textureUrl),
+        roughness: 1,
         metalness: 0,
-        envMapIntensity: stone.envMapIntensity ?? 0.6,
+        envMapIntensity: 0,
       });
       rawMat.userData.boxUV = true;
-      rawMat.userData.uvMeter = 0.9;
+      rawMat.userData.uvMeter = 1.0;
       return addStoneShader(rawMat);
     }
     const nKey = `normal:${stone.kind}:${stone.color}`;
