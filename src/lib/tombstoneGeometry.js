@@ -348,60 +348,27 @@ function isSardoGranite(stone) {
   return !!stone && stone.id === 'sardo';
 }
 
-// מפת האבן של סרדו נבנית מהתמונה: מנקים את הפיסה הזרה שבפינת התצלום
-// (כתמים כחולים/adומים שהופיעו על המצבה עם כל אריח) וממירים לגוון אפור ניטרלי,
-// כך שלא נשאר על האבן שום גוון כחול, סגול או חום.
-function buildSardoMap(url) {
-  const cv = document.createElement('canvas');
-  cv.width = 256;
-  cv.height = 256;
-  const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#a6a9ab';
-  ctx.fillRect(0, 0, cv.width, cv.height);
-  const tex = new THREE.CanvasTexture(cv);
+export function getSardoGraniteMaterial() {
+  if (SARDO_MATERIAL) return SARDO_MATERIAL;
+  const stone = sardoStone();
+  const tex = new THREE.TextureLoader().load(stone.textureUrl, (loaded) => {
+    // הטקסטורה נטענה — מבטלים את גוון הביניים כדי שלא יהיה שום טינט על האבן.
+    if (SARDO_MATERIAL) {
+      SARDO_MATERIAL.color.set('#ffffff');
+      SARDO_MATERIAL.needsUpdate = true;
+    }
+    loaded.colorSpace = THREE.SRGBColorSpace;
+    loaded.needsUpdate = true;
+  });
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
 
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    const w = img.width, h = img.height;
-    cv.width = w;
-    cv.height = h;
-    ctx.drawImage(img, 0, 0, w, h);
-    try {
-      // מכסים את פינת התצלום שבה נראית פיסה זרה — בהעתקת אבן נקייה מאזור סמוך
-      const srcX = Math.round(w * 0.55), srcY = Math.round(h * 0.30);
-      const srcW = Math.round(w * 0.20), srcH = Math.round(h * 0.16);
-      const dstX = Math.round(w * 0.78), dstY = 0;
-      ctx.drawImage(cv, srcX, srcY, srcW, srcH, dstX, dstY, w - dstX, Math.round(h * 0.16));
-
-      const data = ctx.getImageData(0, 0, w, h);
-      const px = data.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-        const v = Math.max(0, Math.min(255, lum));
-        px[i] = v;
-        px[i + 1] = v;
-        px[i + 2] = v;
-      }
-      ctx.putImageData(data, 0, 0);
-    } catch { /* canvas tainted — נשאר הגוון האפור הבסיסי */ }
-    tex.needsUpdate = true;
-  };
-  img.src = url;
-  return tex;
-}
-
-export function getSardoGraniteMaterial() {
-  if (SARDO_MATERIAL) return SARDO_MATERIAL;
-  const stone = sardoStone();
-
   const mat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color('#ffffff'),
-    map: buildSardoMap(stone.textureUrl),
+    // גוון ביניים אפור עד שהתמונה נטענת — אף פעם לא צבע זר על פאה.
+    color: new THREE.Color('#b9bcbe'),
+    map: tex,
     roughness: 0.4,
     metalness: 0,
     envMapIntensity: 0.35,
