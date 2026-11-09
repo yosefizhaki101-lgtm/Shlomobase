@@ -13,6 +13,7 @@ import {
   TOMBSTONE_DIMENSIONS,
   PANELS,
   FRAMES,
+  ROCK_FRAME_GEOMS,
   SLABS,
   HEADSTONE_TOPS,
   ACCESSORIES,
@@ -785,14 +786,15 @@ function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   return { topY: y + h };
 }
 
-function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null }) {
+function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null, surface = null }) {
   const resolvedStone = resolveOverride(stone, def.overrideColor);
   const mat = stoneMat(resolvedStone, textureUrl, true);
   // Per-component dimension overrides (cm → m); fall back to shared W/L
   if (customW) W = customW;
   if (customL) L = customL;
   const wallH = (customHeight || def.height || 0.25) * 0.88;
-  const useRock = def.geom === 'wall_rock_pitch' || def.geom === 'wall_tuvza' || def.geom === 'wall_connection_rock';
+  // הבחירה בממשק (חלקה / פראית) גוברת על ברירת המחדל של הסגנון
+  const useRock = surface ? surface === 'rock' : ROCK_FRAME_GEOMS.includes(def.geom);
   const isConnection = def.geom === 'wall_connection' || def.geom === 'wall_connection_rock';
 
   // Single unified frame block — one solid wall around the perimeter (3-layer total: panel + frame + slab)
@@ -1680,7 +1682,7 @@ export function buildTombstone(design, glbModels = null) {
     const fh = isLast && design.frameHeightCm ? design.frameHeightCm / 100 : null;
     let frameGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'frame', optionId: frameId, stone: frameStone, y, textureUrl: design.frameTextureUrl });
     if (!frameGlbUsed) {
-      y = buildFrame({ ...ctx, y, stone: frameStone, def: fDef, textureUrl: design.frameTextureUrl, customHeight: fh, customW: design.frameWidthCm ? design.frameWidthCm / 100 : null, customL: design.frameLengthCm ? design.frameLengthCm / 100 : null }).topY;
+      y = buildFrame({ ...ctx, y, stone: frameStone, def: fDef, textureUrl: design.frameTextureUrl, customHeight: fh, customW: design.frameWidthCm ? design.frameWidthCm / 100 : null, customL: design.frameLengthCm ? design.frameLengthCm / 100 : null, surface: design.frameSurface || null }).topY;
     } else {
       y += fDef.height || 0.25;
     }

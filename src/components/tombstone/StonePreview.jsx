@@ -509,6 +509,10 @@ const StonePreview = forwardRef(({ design, glbModels = [], onItemDrag }, ref) =>
         <span className={`h-2 w-2 rounded-full ${exploded ? 'bg-amber-500' : 'bg-stone-400'}`} />
         {exploded ? 'תצוגה מורכבת' : 'תצוגת פירוק'}
       </button>
+      {/* Image disclaimer */}
+      <p className="pointer-events-none absolute bottom-1.5 left-2 right-2 z-10 text-center text-[10px] font-medium leading-tight text-stone-700/80">
+        התמונה להמחשה בלבד — ייתכנו הבדלי גוון בין ההדמיה לאבן בפועל
+      </p>
     </div>
   );
 });

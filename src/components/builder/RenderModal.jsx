@@ -81,7 +81,7 @@ export default function RenderModal({ open, loading, imageUrl, error, onClose })
               <img src={imageUrl} alt="רנדור פוטוריאליסטי" className="max-h-[70vh] w-full object-contain" />
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-stone-200 px-5 py-3">
-              <p className="text-xs text-stone-500">הרנדור מוכן — ניתן להוריד את התמונה</p>
+              <p className="text-xs text-stone-500">התמונה להמחשה בלבד — ייתכנו הבדלי גוון מהאבן בפועל</p>
               <div className="flex gap-2">
                 <button
                   type="button"

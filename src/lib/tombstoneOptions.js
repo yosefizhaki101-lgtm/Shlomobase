@@ -172,10 +172,10 @@ export const TOMBSTONE_RANGES = {
 
 // ארבעת סוגי המצבות הסטנדרטיים בישראל
 export const TOMBSTONE_TYPES = [
-  { id: 'small', name: 'קטנה', desc: 'חצי מצבה' },
-  { id: 'regular', name: 'רגילה', desc: 'קבר יחיד' },
-  { id: 'family', name: 'משפחתית', desc: 'כמה חלקות סמוכות' },
-  { id: 'double', name: 'כפולה', desc: 'שני קברים צמודים' },
+  { id: 'regular', name: 'יחיד', desc: 'מצבת יחיד' },
+  { id: 'double', name: 'זוגית', desc: 'זוגית לכל האורך' },
+  { id: 'family', name: 'מכפלה', desc: 'מכפלה — כמה חלקות סמוכות' },
+  { id: 'small', name: 'חצי', desc: 'מצבת חצי — מצבה קטנה' },
 ];
 
 export const PANELS = [
@@ -197,6 +197,9 @@ export const PANELS = [
   { id: 'panel_connect_plate', name: 'פנל חיבור ופלטה אמצעית', geom: 'base_connection', height: 0.15 },
   { id: 'panel_connect_garden', name: 'פנל חיבור ומקום לגינה', geom: 'base_connection_garden', height: 0.15 },
 ];
+
+// מסגרות "פראיות" (מסותתות) — הבחירה בממשק קובעת אם המסגרת חלקה או פראית
+export const ROCK_FRAME_GEOMS = ['wall_rock_pitch', 'wall_tuvza', 'wall_connection_rock'];
 
 export const FRAMES = [
   { id: 'frame_25_rock', name: 'מסגרת 25 טובזה', geom: 'wall_rock_pitch', height: 0.25 },

@@ -18,6 +18,7 @@ const emptyDesign = {
   stoneType: 'black_granite',
   panel: ['panel_15'],
   frame: ['frame_25_rock'],
+  frameSurface: null,
   slab: ['slab_8_smooth'],
   headstoneTop: ['standing'],
   headstonePlacement: 'top',

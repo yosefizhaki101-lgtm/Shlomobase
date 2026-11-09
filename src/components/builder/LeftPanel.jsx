@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_DIMENSIONS, TOMBSTONE_RANGES, PANELS, FRAMES, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
+import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_DIMENSIONS, TOMBSTONE_RANGES, PANELS, FRAMES, ROCK_FRAME_GEOMS, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
+import FrameSurfacePicker from '@/components/builder/FrameSurfacePicker';
 import OptionCard from '@/components/builder/OptionCard';
 import MaterialSelector from '@/components/tombstone/MaterialSelector';
 import StepAccessories from '@/components/tombstone/steps/StepAccessories';
@@ -173,6 +174,11 @@ export default function LeftPanel({ step, setStep, design, update }) {
         const stoneField = stoneFieldMap[step];
         const colorField = colorFieldMap[step];
         const selectedLayers = (Array.isArray(design[field]) ? design[field] : [design[field]]).filter(Boolean);
+        // מרקם המסגרת: הבחירה המפורשת, אחרת לפי הסגנון הנבחר
+        const frameSurface = step === 2
+          ? (design.frameSurface
+            || (selectedLayers.some((id) => ROCK_FRAME_GEOMS.includes((FRAMES.find((f) => f.id === id) || {}).geom)) ? 'rock' : 'smooth'))
+          : null;
         // Headstone (step 4) is a single choice — one style at a time
         const isSingleChoice = step === 4;
         // Frame floors (step 2): first pick replaces, "add floor" stacks another one
@@ -203,6 +209,9 @@ export default function LeftPanel({ step, setStep, design, update }) {
               maxLayers={step === 4 ? 1 : 3}
               hint={isFrameStep ? (addFloor.frame ? ADD_HINT : REPLACE_HINT) : null}
             />
+            {isFrameStep && (
+              <FrameSurfacePicker selected={frameSurface} onSelect={(v) => update({ frameSurface: v })} />
+            )}
             {isFrameStep && (
               <FloorButton adding={addFloor.frame} onClick={() => setAddFloor((s) => ({ ...s, frame: !s.frame }))} />
             )}
