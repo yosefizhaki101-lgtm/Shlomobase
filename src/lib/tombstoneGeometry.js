@@ -339,6 +339,27 @@ function baseStoneMat(stone, textureUrl) {
   // Actual photo texture assigned to the stone type — used as the diffuse map (no flat colour),
   // with the procedural map supplying only a subtle bump so the surface has real depth.
   if (stone.textureUrl) {
+    // תמונת אבן "כמו שהיא" — משתמשת בצילום המקורי בלי עיבוד גוונים (למשל גרניט מנומר)
+    if (stone.rawTexture) {
+      const nKeyRaw = `normal:${stone.kind}:${stone.color}`;
+      let nTexRaw = TEX_CACHE.get(nKeyRaw);
+      if (!nTexRaw) {
+        nTexRaw = makeStoneTextures(stone.kind, stone.color);
+        TEX_CACHE.set(nKeyRaw, nTexRaw);
+      }
+      const rawMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#ffffff'),
+        map: getUploadedTexture(stone.textureUrl),
+        normalMap: nTexRaw.normalMap,
+        normalScale: new THREE.Vector2(nTexRaw.nStr * 0.3, nTexRaw.nStr * 0.3),
+        roughness: stone.roughness ?? 0.9,
+        metalness: 0,
+        envMapIntensity: stone.envMapIntensity ?? 0.6,
+      });
+      rawMat.userData.boxUV = true;
+      rawMat.userData.uvMeter = 0.9;
+      return addStoneShader(rawMat);
+    }
     const nKey = `normal:${stone.kind}:${stone.color}`;
     let nTex = TEX_CACHE.get(nKey);
     if (!nTex) {
