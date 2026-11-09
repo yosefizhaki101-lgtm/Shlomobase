@@ -354,8 +354,21 @@ function withFinish(mat, stone) {
   return mat;
 }
 
-function stoneMat(stone, textureUrl) {
-  return withFinish(baseStoneMat(stone, textureUrl), stone);
+// wild=true — גימור פראי (סיתות גס) לאותה אבן: מתאים למסגרת, לפלטות ולצדדים,
+// בעוד שאבן הראש נשארת חלקה לגמרי.
+function stoneMat(stone, textureUrl, wild = false) {
+  const isSoft = stone.kind === 'hebron' || stone.kind === 'halila';
+  const eff = wild && isSoft
+    ? {
+        ...stone,
+        kind: `${stone.kind}_wild`,
+        roughness: 0.97,
+        metalness: 0,
+        finish: null,
+        envMapIntensity: 0.35,
+      }
+    : stone;
+  return withFinish(baseStoneMat(eff, textureUrl), eff);
 }
 
 function baseStoneMat(stone, textureUrl) {
@@ -470,9 +483,9 @@ function baseStoneMat(stone, textureUrl) {
   });
   // חלילה וחברון: מיפוי בקופסה וטריפלנרי במרחב העולם — קנה מידה אמיתי על כל פאה,
   // כך הסיתות לא נמתח לפסים רחבים על צדי הקומות.
-  if (stone.kind === 'halila' || stone.kind === 'hebron') {
+  if (stone.kind === 'halila' || stone.kind === 'hebron' || stone.kind === 'halila_wild' || stone.kind === 'hebron_wild') {
     mat.userData.boxUV = true;
-    mat.userData.uvMeter = 1.75;
+    mat.userData.uvMeter = stone.kind.endsWith('_wild') ? 1.1 : 1.75;
     return addStoneShader(mat);
   }
   return mat;
@@ -693,7 +706,7 @@ function heartShape() {
 }
 
 function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = null, slabW = null, slabL = null, forceInsetCm = 0 }) {
-  const mat = stoneMat(resolveOverride(stone, def.overrideColor), textureUrl);
+  const mat = stoneMat(resolveOverride(stone, def.overrideColor), textureUrl, true);
   const h = customHeight || def.height || 0.1;
   // Top panel layer is always 2cm smaller than the slab above (fixed construction standard)
   const insetCm = forceInsetCm || def.insetCm || 0;
@@ -733,7 +746,7 @@ function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = nul
 
 function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null }) {
   const resolvedStone = resolveOverride(stone, def.overrideColor);
-  const mat = stoneMat(resolvedStone, textureUrl);
+  const mat = stoneMat(resolvedStone, textureUrl, true);
   // Per-component dimension overrides (cm → m); fall back to shared W/L
   if (customW) W = customW;
   if (customL) L = customL;
@@ -750,7 +763,7 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   // Smooth polished cap for rough frames — contrasts with the rugged exterior like the reference
   const capH = 0.018;
   // כיפת המסגרת מקבלת את אותו חומר וטקסטורה כמו שאר החלקים — בלי צבע אחיד שנשאר "לבן שטוח".
-  const capMat = useRock ? stoneMat(resolvedStone, textureUrl) : null;
+  const capMat = useRock ? stoneMat(resolvedStone, textureUrl, true) : null;
 
   // Rock-pitched walls use rugged geometry; smooth walls use sharp-edged boxes
   const wallSideGeo = useRock
@@ -799,7 +812,7 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
 }
 
 function buildSlab({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null }) {
-  const mat = stoneMat(resolveOverride(stone, def.overrideColor), textureUrl);
+  const mat = stoneMat(resolveOverride(stone, def.overrideColor), textureUrl, true);
   // Per-component dimension overrides (cm → m); fall back to shared W/L
   if (customW) W = customW;
   if (customL) L = customL;
@@ -807,7 +820,7 @@ function buildSlab({ W, L, y, stone, def, group, textureUrl, customHeight = null
   switch (def.geom) {
     case 'slab_bench':
     case 'slab_bench_rock': {
-      const benchMat = def.geom === 'slab_bench_rock' ? stoneMat(resolveOverride(stone, def.overrideColor)) : mat;
+      const benchMat = def.geom === 'slab_bench_rock' ? stoneMat(resolveOverride(stone, def.overrideColor), null, true) : mat;
       place(group, new THREE.Mesh(sharpGeo(W * 0.96, h, L * 0.94), benchMat), new THREE.Vector3(0, y + h / 2, 0), 'slab');
       place(group, new THREE.Mesh(sharpGeo(W * 0.96, h * 0.5, L * 0.3), benchMat), new THREE.Vector3(0, y + h * 1.25, L * 0.32), 'slab');
       break;

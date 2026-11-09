@@ -93,6 +93,55 @@ function ridged(size, scale, oct, seed) {
   return out;
 }
 
+// אריח טקסטורה ללא תפרים: הרשת עצמה גוללת על עצמה, כך שקצה האריח
+// מתחבר בדיוק לתחילתו ואין קווי רשת חוזרים על האבן.
+function tileValueNoise(size, cells, seed) {
+  const n = Math.max(2, Math.round(cells));
+  const grid = new Float32Array(n * n);
+  for (let i = 0; i < grid.length; i++) grid[i] = hash(i * 13.1, i * 7.7, seed);
+  const out = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const gx = (x / size) * n, gy = (y / size) * n;
+      const x0 = Math.floor(gx), y0 = Math.floor(gy);
+      const tx = gx - x0, ty = gy - y0;
+      const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+      const xa = x0 % n, xb = (x0 + 1) % n, ya = y0 % n, yb = (y0 + 1) % n;
+      const a = grid[ya * n + xa], b = grid[ya * n + xb];
+      const c = grid[yb * n + xa], d = grid[yb * n + xb];
+      out[y * size + x] = (a * (1 - sx) + b * sx) * (1 - sy) + (c * (1 - sx) + d * sx) * sy;
+    }
+  }
+  return out;
+}
+
+function tileFbm(size, cells, oct, seed) {
+  const out = new Float32Array(size * size);
+  let amp = 1, tot = 0, c = cells, sd = seed;
+  for (let o = 0; o < oct; o++) {
+    const nz = tileValueNoise(size, c, sd);
+    for (let i = 0; i < out.length; i++) out[i] += nz[i] * amp;
+    tot += amp; amp *= 0.5; c = Math.min(256, c * 2); sd = sd * 7 + 3;
+  }
+  for (let i = 0; i < out.length; i++) out[i] /= tot;
+  return out;
+}
+
+function tileRidged(size, cells, oct, seed) {
+  const out = new Float32Array(size * size);
+  let amp = 1, tot = 0, c = cells, sd = seed;
+  for (let o = 0; o < oct; o++) {
+    const nz = tileValueNoise(size, c, sd);
+    for (let i = 0; i < out.length; i++) {
+      const v = 1 - Math.abs(nz[i] * 2 - 1);
+      out[i] += v * v * amp;
+    }
+    tot += amp; amp *= 0.5; c = Math.min(256, c * 2); sd = sd * 7 + 3;
+  }
+  for (let i = 0; i < out.length; i++) out[i] /= tot;
+  return out;
+}
+
 function flowingMarble(size, seed) {
   // Anisotropic ridged noise rotated diagonally + domain warp modulation
   // for long, flowing, natural marble veins (not isotropic blobs).
@@ -513,15 +562,16 @@ const PRESETS = {
   black_marble: { ridged: true, noiseScale: 14, octaves: 5, veinMix: 0.78, veinColor: [180, 175, 168], baseVar: 0.06, roughBase: 0.2, roughVar: 0.1, nStr: 0.7, flecks: true },
   mirror_black: { ridged: false, noiseScale: 18, octaves: 4, baseVar: 0.12, roughBase: 0.03, roughVar: 0.04, nStr: 0.22, flecks: true, crystalline: true },
   orion_blue: { flowingMarble: true, lightVeins: true, veinMix: 0.55, veinColor: [110, 118, 126], veinColor2: [140, 148, 158], baseVar: 0.08, roughBase: 0.15, roughVar: 0.1, nStr: 0.5, flecks: true, repeat: 1 },
-  // אבן חלילה — בז'־דבש חם, משטח מושחז עם גרעון עדין וכתמים קטנים,
-  // וסיתות חד וזוויתי (chisel) לנרמול הצדדים.
-  halila: { chisel: true, softVeins: true, veinMix: 0.14, veinColor: [196, 166, 122], baseVar: 0.06, roughBase: 0.9, roughVar: 0.1, nStr: 0.8, microSpeckles: true, speckleDark: 0.88, repeat: 1 },
+  // אבן חלילה — בז'־דבש חם, משטח מושחז וחלק עם גרעון עדין וכתמים קטנים (בלי משבצות).
+  halila: { honed: true, baseVar: 0.06, roughBase: 0.9, roughVar: 0.05, nStr: 0.18, repeat: 1 },
   concrete: { ridged: false, noiseScale: 6, octaves: 4, baseVar: 0.4, roughBase: 0.78, roughVar: 0.2, nStr: 0.8, pores: true, cracks: true },
   sandstone: { ridged: false, noiseScale: 5, octaves: 3, banded: true, baseVar: 0.5, roughBase: 0.86, roughVar: 0.14, nStr: 1.4 },
   tuvza: { rockface: true, noiseScale: 2, octaves: 6, baseVar: 0.22, roughBase: 0.99, roughVar: 0.01, nStr: 3.0, cracks: true, flecks: true, microSpeckles: true },
-  // אבן חברון — שמנת־לבנה חמה עם עורקים ורדרדים עדינים וגוון אפור חיוור,
-  // משטח מושחז (honed) וסיתות חד לנרמול הצדדים.
-  hebron: { chisel: true, softVeins: true, veinMix: 0.1, veinColor: [222, 203, 195], veinColor2: [210, 212, 210], baseVar: 0.04, roughBase: 0.9, roughVar: 0.1, nStr: 0.75, microSpeckles: true, speckleDark: 0.9, repeat: 1 },
+  // אבן חברון — שמנת־לבנה חמה ואחידה, משטח מושחז (honed) וחלק לגמרי.
+  hebron: { honed: true, baseVar: 0.035, roughBase: 0.9, roughVar: 0.05, nStr: 0.14, repeat: 1 },
+  // גימור פראי (סיתות גס) לאותן אבנים — לצדדים, למסגרת ולפלטות.
+  halila_wild: { wild: true, baseVar: 0.06, roughBase: 0.97, roughVar: 0.03, nStr: 1.5, repeat: 1 },
+  hebron_wild: { wild: true, baseVar: 0.035, roughBase: 0.97, roughVar: 0.03, nStr: 1.45, repeat: 1 },
   bronze: { ridged: false, noiseScale: 10, octaves: 3, baseVar: 0.18, roughBase: 0.38, roughVar: 0.22, nStr: 0.6, patina: true },
   plaque: { ridged: false, noiseScale: 4, octaves: 3, baseVar: 0.25, roughBase: 0.45, roughVar: 0.2, nStr: 1.0 },
 };
@@ -535,8 +585,23 @@ export function makeStoneTextures(kind, baseColorHex) {
   let height;
   let colorHeight = null;
   let veinField = null;
-  if (p.chisel) {
-    // גימור מושחז (honed): מישור חלק עם גרעון עדין; הצדדים מקבלים סיתות חד וזוויתי.
+  if (p.honed) {
+    // משטח מושחז וחלק — גרעון עדין בלבד, בלי משבצות ובלי תפרים חוזרים.
+    height = tileFbm(size, 20, 4, seed);
+    colorHeight = tileFbm(size, 34, 3, seed + 7);
+  } else if (p.wild) {
+    // פני שטח פראיים: פאות אבן זוויתיות בגדלים שונים, בלי תבנית רשת.
+    const base = tileFbm(size, 18, 4, seed);
+    const crease = tileRidged(size, 9, 3, seed + 41);
+    const fine = tileFbm(size, 64, 3, seed + 77);
+    height = new Float32Array(size * size);
+    for (let i = 0; i < height.length; i++) {
+      const v = base[i] * 0.62 + (1 - crease[i]) * 0.38;
+      const step = Math.floor(v * 7) / 7;
+      height[i] = Math.max(0, Math.min(1, step * 0.72 + v * 0.18 + (fine[i] - 0.5) * 0.2));
+    }
+    colorHeight = tileFbm(size, 34, 3, seed + 7);
+  } else if (p.chisel) {
     height = chiselHeight(size, seed);
     colorHeight = fbm(size, 26, 3, seed + 7);
     if (p.softVeins) veinField = flowingMarble(size, seed + 29);

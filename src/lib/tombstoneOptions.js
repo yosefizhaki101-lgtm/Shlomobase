@@ -50,10 +50,10 @@ export const STONE_TYPES = [
   {
     id: 'hebron',
     name: 'חברון',
-    desc: 'אבן חברון - שמנת־לבנה חמה עם עורקים ורדרדים עדינים',
-    swatch: 'linear-gradient(135deg, #E9E4E0 0%, #D3C6B8 100%)',
+    desc: 'אבן חברון - שמנת־לבנה חמה ואחידה עם גרעון עדין',
+    swatch: 'linear-gradient(135deg, #FAF4EE 0%, #E4DCD5 100%)',
     kind: 'hebron',
-    color: '#E8E2D6',
+    color: '#F2EBE5',
     roughness: 0.55,
     metalness: 0.01,
     polish: 0.3,
