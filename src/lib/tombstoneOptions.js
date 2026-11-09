@@ -76,9 +76,10 @@ export const STONE_TYPES = [
     swatch: '#9B9EA3',
     kind: 'granite',
     color: '#9B9EA3',
-    roughness: 0.25,
-    metalness: 0.12,
-    polish: 0.7,
+    roughness: 1.0,
+    metalness: 0.0,
+    polish: 0.15,
+    envMapIntensity: 0.8,
   },
   {
     id: 'red_stone',
