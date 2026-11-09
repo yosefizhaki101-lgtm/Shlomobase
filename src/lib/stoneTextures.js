@@ -553,7 +553,7 @@ function drawMarbleVeinsRough(ctx, size, seed) {
 }
 
 const PRESETS = {
-  granite: { ridged: false, noiseScale: 4, octaves: 4, baseVar: 0.5, roughBase: 0.62, roughVar: 0.28, nStr: 1.0, flecks: true, crystalline: true },
+  granite: { ridged: false, noiseScale: 4, octaves: 4, baseVar: 0.5, roughBase: 0.62, roughVar: 0.28, nStr: 1.0, flecks: true, crystalline: true, denseFlecks: true },
   marble: { flowingMarble: true, veinMix: 0.6, veinColor: [140, 135, 125], veinColor2: [110, 105, 95], veinColor3: [80, 75, 68], baseVar: 0.05, roughBase: 0.72, roughVar: 0.18, nStr: 0.4, repeat: 1 },
   turkish_grey: { ridged: false, noiseScale: 6, octaves: 3, banded: true, baseVar: 0.05, roughBase: 0.35, roughVar: 0.15, nStr: 0.3, linearVeins: true, repeat: 1 },
   turkish_tan: { flowingMarble: true, lightVeins: true, veinMix: 0.32, veinColor: [150, 126, 96], baseVar: 0.1, roughBase: 0.3, roughVar: 0.12, nStr: 0.35, flecks: true, repeat: 1 },
@@ -680,26 +680,28 @@ export function makeStoneTextures(kind, baseColorHex) {
         // Multi-color mineral flecks: white quartz, grey feldspar, black biotite, gold iron oxide
         const f = hash(x, y, seed + 5);
         const f2 = hash(x * 3.1, y * 3.1, seed + 8);
-        if (f > 0.993) {
+        // denseFlecks (גרניט אדום מלוטש) — נקודות שחורות ולבנות בולטות יותר
+        const shift = p.denseFlecks ? 0.014 : 0;
+        if (f > 0.993 - shift) {
           // White quartz — bright crystalline fleck
           r = Math.min(255, r * 0.3 + 225 * 0.7);
           g = Math.min(255, g * 0.3 + 222 * 0.7);
           b = Math.min(255, b * 0.3 + 218 * 0.7);
-        } else if (f > 0.985) {
+        } else if (f > 0.985 - shift) {
           // Light grey feldspar
           const gr = 150 + Math.floor(f2 * 50);
           r = Math.min(255, r * 0.4 + gr * 0.6);
           g = Math.min(255, g * 0.4 + gr * 0.6);
           b = Math.min(255, b * 0.4 + gr * 0.6);
-        } else if (f > 0.977) {
+        } else if (f > 0.977 - shift) {
           // Dark biotite / black mica
           r *= 0.3; g *= 0.3; b *= 0.3;
-        } else if (f > 0.968) {
+        } else if (f > 0.968 - shift) {
           // Gold/brown iron oxide
           r = Math.min(255, r * 0.4 + 130 * 0.6);
           g = Math.min(255, g * 0.4 + 100 * 0.6);
           b = Math.min(255, b * 0.4 + 70 * 0.6);
-        } else if (f > 0.955) {
+        } else if (f > 0.955 - shift) {
           // Subtle bright crystal facet
           r = Math.min(255, r * 1.25); g = Math.min(255, g * 1.25); b = Math.min(255, b * 1.25);
         }

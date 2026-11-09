@@ -457,18 +457,21 @@ function baseStoneMat(stone, textureUrl) {
   }
   // Polished stones (marble, fine granite): clearcoat for a realistic polished surface
   if (stone.polish >= 0.5) {
+    // ליטוש גבוה (למשל גרניט אדום מלוטש): שכבת טופ גאס, משטח חלק מאוד והחזרי סביבה חזקים
+    const mirror = stone.polish >= 0.85;
+    const nScale = t.nStr * (mirror ? 0.9 : 2.0);
     return new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       map: t.map,
       normalMap: t.normalMap,
-      normalScale: new THREE.Vector2(t.nStr * 2.0, t.nStr * 2.0),
+      normalScale: new THREE.Vector2(nScale, nScale),
       roughnessMap: t.roughnessMap,
       roughness: stone.roughness,
       metalness: stone.metalness || 0,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.08,
-      envMapIntensity: stone.envMapIntensity ?? 2.5,
-      sheen: 0.4,
+      clearcoat: stone.clearcoat ?? (mirror ? 1 : 0.8),
+      clearcoatRoughness: stone.clearcoatRoughness ?? (mirror ? 0.015 : 0.08),
+      envMapIntensity: stone.envMapIntensity ?? (mirror ? 3.2 : 2.5),
+      sheen: mirror ? 0 : 0.4,
       sheenColor: new THREE.Color(stone.sheenColor || 0xfff5e8),
     });
   }
