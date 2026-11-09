@@ -561,6 +561,8 @@ const PRESETS = {
   pure_white_marble: { ridged: false, noiseScale: 6, octaves: 3, baseVar: 0.05, roughBase: 0.05, roughVar: 0.04, nStr: 0.15, repeat: 1, flecks: true },
   black_marble: { ridged: true, noiseScale: 14, octaves: 5, veinMix: 0.78, veinColor: [180, 175, 168], baseVar: 0.06, roughBase: 0.2, roughVar: 0.1, nStr: 0.7, flecks: true },
   mirror_black: { ridged: false, noiseScale: 18, octaves: 4, baseVar: 0.12, roughBase: 0.03, roughVar: 0.04, nStr: 0.22, flecks: true, crystalline: true },
+  // שיש קררה לבן — בסיס לבן־חם עם ורידים אפורים דקים ועדינים ומשטח מלוטש
+  carrara: { flowingMarble: true, lightVeins: true, veinMix: 0.22, veinColor: [190, 192, 193], veinColor2: [156, 160, 163], baseVar: 0.026, roughBase: 0.1, roughVar: 0.05, nStr: 0.2, repeat: 1 },
   orion_blue: { flowingMarble: true, lightVeins: true, veinMix: 0.55, veinColor: [110, 118, 126], veinColor2: [140, 148, 158], baseVar: 0.08, roughBase: 0.15, roughVar: 0.1, nStr: 0.5, flecks: true, repeat: 1 },
   // אבן חלילה — בז'־דבש חם, משטח מושחז וחלק עם גרעון עדין וכתמים קטנים (בלי משבצות).
   halila: { honed: true, baseVar: 0.06, roughBase: 0.9, roughVar: 0.05, nStr: 0.18, repeat: 1 },
