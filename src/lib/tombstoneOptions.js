@@ -73,7 +73,7 @@ export const STONE_TYPES = [
     id: 'sardo',
     name: 'גרניט סרדו',
     desc: 'גרניט סרדו - אפור מלח ופלפל',
-    swatch: 'linear-gradient(135deg, #BCBCBC 0%, #949494 100%)',
+    swatch: '#A9A9A9',
     kind: 'granite',
     color: '#A9A9A9',
     roughness: 0.25,
