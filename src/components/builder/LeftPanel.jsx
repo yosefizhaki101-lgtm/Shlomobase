@@ -104,8 +104,6 @@ export default function LeftPanel({ step, setStep, design, update }) {
                 onSelect={(v) => update({ stoneType: v })}
                 colorOverride={design.colorOverride}
                 onColorSelect={(v) => update({ colorOverride: v })}
-                finish={design.finish}
-                onFinishSelect={(v) => update({ finish: v })}
               />
             </div>
           </div>
@@ -130,8 +128,6 @@ export default function LeftPanel({ step, setStep, design, update }) {
                 onSelect={(v) => update({ panelStone: v })}
                 colorOverride={design.panelColor || design.colorOverride}
                 onColorSelect={(v) => update({ panelColor: v })}
-                finish={design.panelFinish || design.finish}
-                onFinishSelect={(v) => update({ panelFinish: v })}
               />
             </div>
             <DimensionEditor
@@ -154,7 +150,6 @@ export default function LeftPanel({ step, setStep, design, update }) {
         const fieldMap = { 2: 'frame', 3: 'slab', 4: 'headstoneTop' };
         const stoneFieldMap = { 2: 'frameStone', 3: 'slabStone', 4: 'headstoneStone' };
         const colorFieldMap = { 2: 'frameColor', 3: 'slabColor', 4: 'headstoneColor' };
-        const finishFieldMap = { 2: 'frameFinish', 3: 'slabFinish', 4: 'headstoneFinish' };
         const dimFieldsMap = {
           2: [
             { key: 'frameWidthCm', label: 'רוחב', min: dimRanges.width[0], max: dimRanges.width[1] + 20, step: 5 },
@@ -177,7 +172,6 @@ export default function LeftPanel({ step, setStep, design, update }) {
         const field = fieldMap[step];
         const stoneField = stoneFieldMap[step];
         const colorField = colorFieldMap[step];
-        const finishField = finishFieldMap[step];
         const selectedLayers = (Array.isArray(design[field]) ? design[field] : [design[field]]).filter(Boolean);
         // Headstone (step 4) is a single choice — one style at a time
         const isSingleChoice = step === 4;
@@ -219,8 +213,6 @@ export default function LeftPanel({ step, setStep, design, update }) {
                 onSelect={(v) => update({ [stoneField]: v })}
                 colorOverride={design[colorField] || design.colorOverride}
                 onColorSelect={(v) => update({ [colorField]: v })}
-                finish={design[finishField] || design.finish}
-                onFinishSelect={(v) => update({ [finishField]: v })}
               />
             </div>
             <DimensionEditor

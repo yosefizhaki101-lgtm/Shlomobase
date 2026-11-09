@@ -19,8 +19,6 @@ export default function StepPart({ options, selected, onSelect, stoneField, colo
             onSelect={(v) => update({ [stoneField]: v })}
             colorOverride={currentColor}
             onColorSelect={colorField ? (v) => update({ [colorField]: v }) : undefined}
-            finish={design.finish}
-            onFinishSelect={(v) => update({ finish: v })}
           />
         </div>
       )}

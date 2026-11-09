@@ -511,14 +511,10 @@ function plainMat(color, roughness = 0.8, metalness = 0) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
 
-// גימור אפקטיבי: בחירת המשתמש, ואם אין — ברירת המחדל של האבן (מט / מבריק)
-function resolveFinish(picked, stone) {
-  return picked && picked !== 'natural' ? picked : stone.defaultFinish || 'matte';
-}
-
 function resolveStone(design) {
   const stone = STONE_TYPES.find((s) => s.id === design.stoneType) || STONE_TYPES[0];
-  const finish = resolveFinish(design.finish, stone);
+  // כל אבן נשארת עם החומר המקורי שלה — בלי גימור מט/מבריק שנבחר מהממשק
+  const finish = null;
   if (design.colorOverride) {
     return { ...stone, color: design.colorOverride, finish };
   }
@@ -530,8 +526,7 @@ function resolveStoneForPart(design, field) {
   const stone = STONE_TYPES.find((s) => s.id === stoneId) || STONE_TYPES[0];
   const colorField = field ? field.replace('Stone', 'Color') : null;
   const partColor = colorField ? design[colorField] : null;
-  const finishField = field ? field.replace('Stone', 'Finish') : null;
-  const finish = resolveFinish((finishField ? design[finishField] : null) || design.finish, stone);
+  const finish = null;
   if (partColor) {
     return { ...stone, color: partColor, finish };
   }
