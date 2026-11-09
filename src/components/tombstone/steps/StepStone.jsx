@@ -79,6 +79,8 @@ export default function StepStone({ design, update }) {
           onSelect={(v) => update({ stoneType: v })}
           colorOverride={design.colorOverride}
           onColorSelect={(v) => update({ colorOverride: v })}
+          finish={design.finish}
+          onFinishSelect={(v) => update({ finish: v })}
         />
       </div>
     </div>

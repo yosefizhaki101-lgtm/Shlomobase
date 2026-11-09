@@ -13,11 +13,8 @@ export const COLORS = [
 // גימור פני האבן — משפיע על הברק והחספוס של אותו חומר, בלי לשנות את הגוון.
 // 'natural' = הגימור שמגיע עם סוג האבן (ברירת מחדל, לא משתנה).
 export const FINISHES = [
-  { id: 'natural', name: 'טבעי', desc: 'הגימור המקורי של האבן' },
   { id: 'matte', name: 'מט', desc: 'משטח מט, ללא החזר אור' },
-  { id: 'silk', name: 'משי', desc: 'חצי מבריק, החזר אור עדין' },
-  { id: 'polish', name: 'מבריק', desc: 'ליטוש מלא, החזר אור חזק' },
-  { id: 'polish_rock_edges', name: 'מבריק + צדדים מחוספסים', desc: 'משטח עליון מלוטש וצדדים בסיתות גס' },
+  { id: 'polish', name: 'מבריק', desc: 'משטח מלוטש עם החזר אור' },
 ];
 
 export const STONE_TYPES = [
@@ -87,9 +84,9 @@ export const STONE_TYPES = [
     id: 'red_stone',
     name: 'אדום',
     desc: 'גרניט אדום בורדו עם נקודות כהות',
-    swatch: 'linear-gradient(135deg, #7E2528 0%, #541418 100%)',
+    swatch: 'linear-gradient(135deg, #8B3A3A 0%, #5A1A1C 100%)',
     kind: 'granite',
-    color: '#6F2024',
+    color: '#7C2328',
     roughness: 0.28,
     metalness: 0.1,
     polish: 0.65,
@@ -97,10 +94,10 @@ export const STONE_TYPES = [
   {
     id: 'orion_belen',
     name: 'אוריון בלו',
-    desc: 'גרניט אוריון בלו - כחול אפור עם מערבולות בהירות',
-    swatch: 'linear-gradient(135deg, #3E4C5C 0%, #26303C 100%)',
+    desc: 'גרניט אוריון בלו - אפור פחם עם גלים אפורים בהירים',
+    swatch: 'linear-gradient(135deg, #72777B 0%, #3F4346 100%)',
     kind: 'orion_blue',
-    color: '#33404F',
+    color: '#3F4346',
     roughness: 0.15,
     metalness: 0.15,
     polish: 0.85,
@@ -130,6 +127,24 @@ export const STONE_TYPES = [
     polish: 0.01,
   },
 ];
+
+// גימור ברירת המחדל של כל אבן: מבריק (מלוטש) או מט.
+// המשתמש תמיד יכול להחליף בין השניים עבור כל אבן.
+export const DEFAULT_FINISHES = {
+  black_granite: 'polish',
+  turkish_marble: 'matte',
+  hebron: 'matte',
+  halila: 'matte',
+  sardo: 'matte',
+  red_stone: 'polish',
+  orion_belen: 'polish',
+  white_marble: 'polish',
+  grey_tuvza: 'matte',
+};
+
+STONE_TYPES.forEach((s) => {
+  s.defaultFinish = DEFAULT_FINISHES[s.id] || 'matte';
+});
 
 // מידות ברירת מחדל (ס"מ) לפי סוג מצבה — המידות הסטנדרטיות המקובלות בישראל:
 // מצבת יחיד 75×170 (בחלק מבתי העלמין 80 רוחב), מצבה כפולה — שני קברים צמודים במבנה אחיד,

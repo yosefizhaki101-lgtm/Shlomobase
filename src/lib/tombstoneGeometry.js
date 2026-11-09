@@ -310,9 +310,9 @@ function ornamentTexture(url) {
 
 // פרסטים של גימור — ברק, חספוס והחזר אור של אותו חומר אבן
 const FINISH_PRESETS = {
-  matte:  { roughness: 0.86, clearcoat: 0,   clearcoatRoughness: 0.6,  metalness: 0.02, envMapIntensity: 0.7,  normal: 1.8 },
+  matte:  { roughness: 0.9,  clearcoat: 0,   clearcoatRoughness: 0.6,  metalness: 0.02, envMapIntensity: 0.55, normal: 1.8,  sheen: 0 },
   silk:   { roughness: 0.34, clearcoat: 0.45, clearcoatRoughness: 0.3, metalness: 0.04, envMapIntensity: 1.5,  normal: 0.8 },
-  polish: { roughness: 0.04, clearcoat: 1,   clearcoatRoughness: 0.02, metalness: 0.03, envMapIntensity: 2.6,  normal: 0.15, reflection: true },
+  polish: { roughness: 0.03, clearcoat: 1,   clearcoatRoughness: 0.02, metalness: 0.03, envMapIntensity: 3.0,  normal: 0.15, sheen: 0.15, reflection: true },
 };
 
 // Applies a finish on top of the stone's own material: same colour and texture,
@@ -329,6 +329,7 @@ function withFinish(mat, stone) {
   if (mat.roughnessMap) mat.roughnessMap = null; // גימור אחיד — בלי מפת חספוס שמושכת למט
   mat.metalness = p.metalness;
   mat.envMapIntensity = p.envMapIntensity;
+  if (p.sheen !== undefined && mat.sheen !== undefined) mat.sheen = p.sheen;
   if (mat.isMeshPhysicalMaterial) {
     mat.clearcoat = p.clearcoat;
     mat.clearcoatRoughness = p.clearcoatRoughness;
@@ -510,9 +511,14 @@ function plainMat(color, roughness = 0.8, metalness = 0) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
 
+// גימור אפקטיבי: בחירת המשתמש, ואם אין — ברירת המחדל של האבן (מט / מבריק)
+function resolveFinish(picked, stone) {
+  return picked && picked !== 'natural' ? picked : stone.defaultFinish || 'matte';
+}
+
 function resolveStone(design) {
   const stone = STONE_TYPES.find((s) => s.id === design.stoneType) || STONE_TYPES[0];
-  const finish = design.finish || null;
+  const finish = resolveFinish(design.finish, stone);
   if (design.colorOverride) {
     return { ...stone, color: design.colorOverride, finish };
   }
@@ -525,7 +531,7 @@ function resolveStoneForPart(design, field) {
   const colorField = field ? field.replace('Stone', 'Color') : null;
   const partColor = colorField ? design[colorField] : null;
   const finishField = field ? field.replace('Stone', 'Finish') : null;
-  const finish = (finishField ? design[finishField] : null) || design.finish || null;
+  const finish = resolveFinish((finishField ? design[finishField] : null) || design.finish, stone);
   if (partColor) {
     return { ...stone, color: partColor, finish };
   }
