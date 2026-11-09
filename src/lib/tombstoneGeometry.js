@@ -333,8 +333,61 @@ function withFinish(mat, stone) {
   return mat;
 }
 
+// ---------------------------------------------------------------------------
+// גרניט סרדו — חומר אחד, משותף לכל המצבה.
+// נבנה מאפס: MeshStandardMaterial פשוט עם צילום האבן בלבד, בלי שיידר מותאם,
+// בלי מפות לכל חלק ובלי גוון. כל משושה במצבה מקבל את אותו מופע בדיוק.
+// ---------------------------------------------------------------------------
+let SARDO_MATERIAL = null;
+
+function sardoStone() {
+  return STONE_TYPES.find((s) => s.id === 'sardo');
+}
+
+function isSardoGranite(stone) {
+  return !!stone && stone.id === 'sardo';
+}
+
+export function getSardoGraniteMaterial() {
+  if (SARDO_MATERIAL) return SARDO_MATERIAL;
+  const stone = sardoStone();
+  const tex = new THREE.TextureLoader().load(stone.textureUrl, (loaded) => {
+    // הטקסטורה נטענה — מבטלים את גוון הביניים כדי שלא יהיה שום טינט על האבן.
+    if (SARDO_MATERIAL) {
+      SARDO_MATERIAL.color.set('#ffffff');
+      SARDO_MATERIAL.needsUpdate = true;
+    }
+    loaded.colorSpace = THREE.SRGBColorSpace;
+    loaded.needsUpdate = true;
+  });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+
+  const mat = new THREE.MeshStandardMaterial({
+    // גוון ביניים אפור עד שהתמונה נטענת — אף פעם לא צבע זר על פאה.
+    color: new THREE.Color('#b9bcbe'),
+    map: tex,
+    roughness: 0.4,
+    metalness: 0,
+    envMapIntensity: 0.35,
+  });
+  mat.userData.isStoneMaterial = true;
+  mat.userData.sardo = true;
+  // מיפוי במרחב העולם: כל משולש מקבל את ההיטל שלו לפי הנורמל שלו (ראו applyFaceUV)
+  mat.userData.boxUV = true;
+  mat.userData.uvMeter = 0.9;
+  SARDO_MATERIAL = mat;
+  return mat;
+}
+
 function stoneMat(stone, textureUrl) {
-  return withFinish(baseStoneMat(stone, textureUrl), stone);
+  // סרדו: אותו מופע חומר בדיוק לכל חלק — בלי גימור, בלי טקסטורה לכל חלק ובלי גוון.
+  if (isSardoGranite(stone)) return getSardoGraniteMaterial();
+  const mat = withFinish(baseStoneMat(stone, textureUrl), stone);
+  mat.userData.isStoneMaterial = true;
+  return mat;
 }
 
 function baseStoneMat(stone, textureUrl) {
@@ -360,27 +413,6 @@ function baseStoneMat(stone, textureUrl) {
   // Actual photo texture assigned to the stone type — used as the diffuse map (no flat colour),
   // with the procedural map supplying only a subtle bump so the surface has real depth.
   if (stone.textureUrl) {
-    // תמונת אבן "כמו שהיא" — משתמשת בצילום המקורי בלי עיבוד גוונים (למשל גרניט מנומר)
-    if (stone.rawTexture) {
-      const nKeyRaw = `normal:${stone.kind}:${stone.color}`;
-      let nTexRaw = TEX_CACHE.get(nKeyRaw);
-      if (!nTexRaw) {
-        nTexRaw = makeStoneTextures(stone.kind, stone.color);
-        TEX_CACHE.set(nKeyRaw, nTexRaw);
-      }
-      const rawMat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#ffffff'),
-        map: getUploadedTexture(stone.textureUrl),
-        normalMap: nTexRaw.normalMap,
-        normalScale: new THREE.Vector2(nTexRaw.nStr * 0.3, nTexRaw.nStr * 0.3),
-        roughness: stone.roughness ?? 0.9,
-        metalness: 0,
-        envMapIntensity: stone.envMapIntensity ?? 0.6,
-      });
-      rawMat.userData.boxUV = true;
-      rawMat.userData.uvMeter = 0.9;
-      return addStoneShader(rawMat);
-    }
     const nKey = `normal:${stone.kind}:${stone.color}`;
     let nTex = TEX_CACHE.get(nKey);
     if (!nTex) {
@@ -631,6 +663,23 @@ function sanitizeGeometry(geo) {
   if (bad(geo.attributes.normal)) {
     geo.computeVertexNormals();
   }
+}
+
+// מחיל את חומר הגרניט המשותף על כל משושה אבן במצבה — אבן ראש, פלטה, קומה,
+// בסיס, מדרגות, פינות וקצוות והמסגרת המסותתת. כל משושה מקבל את אותו מופע חומר,
+// וכל גיאומטריה מקבלת מיפוי במרחב העולם (UV פר משולש) — בלי טקסטורה חסרה ובלי שיידר.
+function applySharedGraniteMaterial(group, shared) {
+  group.traverse((obj) => {
+    if (!obj.isMesh || !obj.material || !obj.geometry) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isStone = mats.some((m) => m && m.userData && m.userData.isStoneMaterial);
+    if (!isStone) return;
+    if (!obj.geometry.userData.boxUV) applyFaceUV(obj.geometry, shared.userData.uvMeter || 0.9, 1);
+    sanitizeGeometry(obj.geometry);
+    obj.material = shared;
+    obj.castShadow = true;
+    obj.receiveShadow = true;
+  });
 }
 
 const STEP_LIFT = { panel: 0, frame: 0.4, slab: 0.85, headstone: 1.25 };
@@ -1783,17 +1832,23 @@ export function buildTombstone(design, glbModels = null) {
   if (decalInfo && design.engravingText) {
     const lettering = LETTERING_TYPES.find((l) => l.id === design.letteringType) || LETTERING_TYPES[0];
     const letterStone = decalInfo.stone || bodyStone;
-    const textTex = makeTextTexture(design.engravingText, lettering.style, letterStone, 1024, design.headstoneTextScale || 1);
-    const isDarkStone = letterStone.color && new THREE.Color(letterStone.color).r < 0.2;
+    // החריטה: מסכת צורה בלבד. הצבע מגיע מהחומר — גוון פחם אחיד, בלי טקסטורה
+    // של אבן ובלי מפות צבע/פליטה על גבי הטקסט.
+    const textMask = makeTextTexture(
+      design.engravingText,
+      lettering.style,
+      letterStone,
+      1024,
+      design.headstoneTextScale || 1,
+      '#ffffff'
+    );
     const textMat = new THREE.MeshStandardMaterial({
-      map: textTex,
+      color: new THREE.Color('#2b2b2f'),
+      alphaMap: textMask,
       transparent: true,
-      alphaTest: 0.01,
-      roughness: isDarkStone ? 0.35 : bodyStone.roughness,
-      metalness: lettering.style === 'bronze' ? 0.92 : isDarkStone ? 0.15 : 0,
-      emissive: isDarkStone ? new THREE.Color(0x222222) : new THREE.Color(0x000000),
-      emissiveMap: textTex,
-      emissiveIntensity: isDarkStone ? 0.45 : 0,
+      alphaTest: 0.5,
+      roughness: 0.75,
+      metalness: 0,
       polygonOffset: true,
       polygonOffsetFactor: -4,
       polygonOffsetUnits: -4,
@@ -1850,6 +1905,10 @@ export function buildTombstone(design, glbModels = null) {
     place(group, slabTextMesh, new THREE.Vector3(slabTextX, slabTopY + 0.003, L * 0.08), 'slab');
   }
 
+  // גרניט סרדו: חומר אחד משותף לכל חלקי המצבה — כולל המסגרת המסותתת.
+  const usesSardo = [bodyStone, panelStone, frameStone, slabStone, hsStone].some(isSardoGranite);
+  if (usesSardo) applySharedGraniteMaterial(group, getSardoGraniteMaterial());
+
   return group;
 }
 
@@ -1859,7 +1918,12 @@ export function disposeGroup(group) {
     if (obj.geometry && !seen.has(obj.geometry)) { seen.add(obj.geometry); obj.geometry.dispose(); }
     if (obj.material) {
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+      mats.forEach((m) => {
+        // חומר הגרניט המשותף נשאר בזיכרון בין בניות — לא משחררים אותו
+        if (!m || (m.userData && m.userData.sardo)) return;
+        if (m.map) m.map.dispose();
+        m.dispose();
+      });
     }
   });
 }

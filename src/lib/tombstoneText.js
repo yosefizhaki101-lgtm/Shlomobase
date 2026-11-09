@@ -136,7 +136,9 @@ function wrapText(ctx, text, maxW) {
   return lines;
 }
 
-export function makeTextTexture(rawText, style, stone, canvasW = 1024, textScale = 1) {
+// flatColor (אופציונלי): הופך את הטקסטורה למסכה בצבע אחיד אחד — כל הפיקסלים
+// שצוירו מקבלים את הצבע הזה ושומרים על השקיפות שלהם. משמש לחריטה בגוון פחם אחיד.
+export function makeTextTexture(rawText, style, stone, canvasW = 1024, textScale = 1, flatColor = null) {
   const W = canvasW, H = 1024;
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -184,6 +186,14 @@ export function makeTextTexture(rawText, style, stone, canvasW = 1024, textScale
     drawText(ctx, item.text, cx, y, style, stone);
     y += item.lineGap;
   });
+
+  if (flatColor) {
+    // צביעת כל מה שצויר בצבע אחיד, תוך שמירה על צורת האותיות ועל השקיפות
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = flatColor;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 16;
