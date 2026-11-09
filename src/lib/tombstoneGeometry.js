@@ -22,15 +22,48 @@ import {
 const TEX_CACHE = new Map();
 const UPLOADED_TEX_CACHE = new Map();
 
+// טקסטורות אבן שנטענות מהרשת מגיעות באיחור: המצבה נבנית מיד והמשטח נראה שחור
+// עד שהתמונה מוכנה. כל טקסטורה שמסתיימת לטעון מודיעה לתצוגה, והיא בונה מחדש —
+// כך כל אבן מקבלת את הגוון שלה מיד, כבר בלחיצה הראשונה.
+const textureReadyListeners = new Set();
+export function onStoneTextureReady(cb) {
+  textureReadyListeners.add(cb);
+  return () => { textureReadyListeners.delete(cb); };
+}
+function notifyTextureReady() {
+  textureReadyListeners.forEach((cb) => cb());
+}
+
+// טעינה דרך fetch (blob) משאירה את ה-canvas קריא — בלי crossOrigin Image
+// שהיה עלול "לזהם" אותו ולהשאיר את האבן שחורה.
+function loadImage(url) {
+  return fetch(url, { mode: 'cors' })
+    .then((r) => r.blob())
+    .then((blob) => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = URL.createObjectURL(blob);
+    }))
+    .catch(() => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    }));
+}
+
 function getUploadedTexture(url) {
   if (!url) return null;
   let tex = UPLOADED_TEX_CACHE.get(url);
   if (!tex) {
     const loader = new THREE.TextureLoader();
-    tex = loader.load(url);
+    tex = loader.load(url, () => notifyTextureReady());
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 8;
+    tex.userData.shared = true;
     UPLOADED_TEX_CACHE.set(url, tex);
   }
   return tex;
@@ -122,17 +155,19 @@ function getStoneMap(url) {
   const cv = document.createElement('canvas');
   cv.width = 4;
   cv.height = 4;
+  const cvCtx = cv.getContext('2d');
+  cvCtx.fillStyle = '#e6e6e2';
+  cvCtx.fillRect(0, 0, 4, 4);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   // אריח חוזר (ללא שיקוף) — כיוון העורקים נשאר זהה על כל פאה
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.userData.shared = true;
   STONE_MAP_CACHE.set(url, { tex });
 
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
+  loadImage(url).then((img) => {
     // חיתוך שוליים: פיקסלים כהים בקצה התמונה היו נמשכים לאורך הפאות כפסים כהים.
     const inset = 0.04;
     const sx = img.width * inset;
@@ -176,8 +211,8 @@ function getStoneMap(url) {
       ctx.putImageData(data, 0, 0);
     } catch { /* canvas tainted — the untinted photo is still drawn */ }
     tex.needsUpdate = true;
-  };
-  img.src = url;
+    notifyTextureReady();
+  }).catch(() => { /* unreachable photo — the stone keeps its plain colour */ });
   return tex;
 }
 
@@ -189,16 +224,18 @@ function getRawStoneMap(url) {
   if (tex) return tex;
   const cv = document.createElement('canvas');
   cv.width = cv.height = 4;
+  const rawCtx = cv.getContext('2d');
+  rawCtx.fillStyle = '#d6d6d6';
+  rawCtx.fillRect(0, 0, 4, 4);
   tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.userData.shared = true;
   RAW_MAP_CACHE.set(url, tex);
 
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
+  loadImage(url).then((img) => {
     cv.width = img.width;
     cv.height = img.height;
     const ctx = cv.getContext('2d');
@@ -218,8 +255,8 @@ function getRawStoneMap(url) {
       ctx.putImageData(data, 0, 0);
     } catch { /* canvas tainted — נעשה שימוש בצילום המקורי */ }
     tex.needsUpdate = true;
-  };
-  img.src = url;
+    notifyTextureReady();
+  }).catch(() => { /* unreachable photo — the stone keeps its plain colour */ });
   return tex;
 }
 
@@ -380,12 +417,30 @@ const LIMESTONE_MAT_CACHE = new Map();
 function getLimestoneTexture(url) {
   let tex = LIMESTONE_TEX_CACHE.get(url);
   if (tex) return tex;
-  tex = new THREE.TextureLoader().load(url);
+  // מציירים קודם גוון אבן אחיד — כך המשטח לא נראה שחור אף לרגע, לפני שהתמונה מוכנה
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 8;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#a9a8a3';
+  ctx.fillRect(0, 0, 8, 8);
+  tex = new THREE.CanvasTexture(cv);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.userData.shared = true;
   LIMESTONE_TEX_CACHE.set(url, tex);
+
+  loadImage(url)
+    .then((img) => {
+      cv.width = img.width;
+      cv.height = img.height;
+      cv.getContext('2d').drawImage(img, 0, 0);
+      tex.needsUpdate = true;
+      notifyTextureReady();
+    })
+    .catch(() => { /* unreachable photo — the stone keeps its plain grey */ });
+
   return tex;
 }
 
@@ -402,6 +457,7 @@ function getLimestoneMaterial(stone) {
   });
   mat.userData.boxUV = true;
   mat.userData.uvMeter = 1.0;
+  mat.userData.shared = true;
   addStoneShader(mat);
   LIMESTONE_MAT_CACHE.set(url, mat);
   return mat;
@@ -1903,7 +1959,15 @@ export function disposeGroup(group) {
     if (obj.geometry && !seen.has(obj.geometry)) { seen.add(obj.geometry); obj.geometry.dispose(); }
     if (obj.material) {
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+      mats.forEach((m) => {
+        // חומר וטקסטורה שמשותפים למטמון (אבן) נשארים — הבנייה הבאה משתמשת בהם בדיוק כמו שהם,
+        // ושיחרור שלהם היה מחזיר משטח שחור עד לטעינה חוזרת.
+        if (m.userData && m.userData.shared) return;
+        [m.map, m.normalMap, m.roughnessMap, m.emissiveMap].forEach((tex) => {
+          if (tex && !(tex.userData && tex.userData.shared)) tex.dispose();
+        });
+        m.dispose();
+      });
     }
   });
 }
