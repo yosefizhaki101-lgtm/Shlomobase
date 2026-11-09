@@ -36,34 +36,46 @@ function getUploadedTexture(url) {
   return tex;
 }
 
-// Box (triplanar-style) UV projection: rewrites each geometry's UVs so the same
-// texture keeps an identical real-world scale on every face — top, front and sides —
-// with no smearing or stretching on long, thin parts.
-function applyBoxUV(geo, metersPerRepeat = 1.75, seed = 1) {
+// World-space projection, decided PER TRIANGLE: each triangle picks its projection
+// axis from its own geometric face normal, so the three vertices of a triangle never
+// disagree about the axis. That keeps the grain at one real-world scale on every face
+// (top, front, sides) with no stretching, and removes the diagonal crease/stretch that
+// appears when neighbouring vertices of the same triangle pick different axes.
+function applyFaceUV(geo, metersPerRepeat = 1.75, seed = 1) {
   const pos = geo && geo.attributes && geo.attributes.position;
   if (!pos) return;
-  if (!geo.attributes.normal) geo.computeVertexNormals();
-  const nrm = geo.attributes.normal;
+  const index = geo.index;
+  const triCount = index ? Math.floor(index.count / 3) : Math.floor(pos.count / 3);
   const uv = new Float32Array(pos.count * 2);
-  // לכל חלק היסט אקראי וסיבוב קל (0-15°) — פורס את האריח אחרת בכל אבן
-  // ומונע חזרתיות, בעוד כיוון העורקים נשאר זהה על כל הפאות.
   const rnd = (n) => {
     const s = Math.sin(seed * 12.9898 + n * 78.233) * 43758.5453;
     return s - Math.floor(s);
   };
-  const ang = rnd(1) * (Math.PI / 12);
-  const ca = Math.cos(ang), sa = Math.sin(ang);
   const offU = rnd(2) * 10, offV = rnd(3) * 10;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i)), nz = Math.abs(nrm.getZ(i));
-    let u, v;
-    if (ny >= nx && ny >= nz) { u = x; v = z; }        // top / bottom faces
-    else if (nx >= ny && nx >= nz) { u = z; v = y; }   // side faces
-    else { u = x; v = y; }                             // front / back faces
-    const su = u / metersPerRepeat, sv = v / metersPerRepeat;
-    uv[i * 2] = su * ca - sv * sa + offU;
-    uv[i * 2 + 1] = su * sa + sv * ca + offV;
+  const scale = 1 / metersPerRepeat;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const ab = new THREE.Vector3(), ac = new THREE.Vector3(), nrm = new THREE.Vector3();
+  for (let t = 0; t < triCount; t++) {
+    const i0 = index ? index.getX(t * 3) : t * 3;
+    const i1 = index ? index.getX(t * 3 + 1) : t * 3 + 1;
+    const i2 = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+    a.fromBufferAttribute(pos, i0);
+    b.fromBufferAttribute(pos, i1);
+    c.fromBufferAttribute(pos, i2);
+    nrm.crossVectors(ab.subVectors(b, a), ac.subVectors(c, a));
+    const ax = Math.abs(nrm.x), ay = Math.abs(nrm.y), az = Math.abs(nrm.z);
+    const useTop = ay >= ax && ay >= az;
+    const useSide = !useTop && ax >= az;
+    const verts = [[i0, a], [i1, b], [i2, c]];
+    for (let k = 0; k < 3; k++) {
+      const vi = verts[k][0], p = verts[k][1];
+      let u, v;
+      if (useTop) { u = p.x; v = p.z; }        // top / bottom faces
+      else if (useSide) { u = p.z; v = p.y; }  // side faces
+      else { u = p.x; v = p.y; }               // front / back faces
+      uv[vi * 2] = u * scale + offU;
+      uv[vi * 2 + 1] = v * scale + offV;
+    }
   }
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.userData.boxUV = true;
@@ -81,13 +93,19 @@ function addStoneShader(mat) {
       .replace('#include <common>', '#include <common>\nvarying float vSideShade;\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvSideShade = 0.93 + 0.07 * abs(normalize(objectNormal).y);'
+        `#include <begin_vertex>
+        // Safe normalize: a zero-length normal must not put NaN into a varying —
+        // that would paint whole triangles with garbage colours.
+        float nLen = length(objectNormal);
+        vSideShade = 0.93 + 0.07 * (nLen > 0.0001 ? abs(objectNormal.y / nLen) : 0.0);`
       )
       .replace(
         '#include <project_vertex>',
         `#include <project_vertex>
         vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
-        vWNrm = normalize(mat3(modelMatrix) * objectNormal);`
+        vec3 wN = mat3(modelMatrix) * objectNormal;
+        float wLen = length(wN);
+        vWNrm = wLen > 0.0001 ? wN / wLen : vec3(0.0, 1.0, 0.0);`
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -97,9 +115,12 @@ function addStoneShader(mat) {
       .replace(
         '#include <map_fragment>',
         `#ifdef USE_MAP
-        vec3 tN = normalize(vWNrm);
+        vec3 tN = vWNrm;
+        float tLen = length(tN);
+        tN = tLen > 0.0001 ? tN / tLen : vec3(0.0, 1.0, 0.0);
         vec3 tw = pow(abs(tN), vec3(5.0));
-        tw /= max(0.0001, tw.x + tw.y + tw.z);
+        float tSum = tw.x + tw.y + tw.z;
+        tw = tSum > 0.0001 ? tw / tSum : vec3(0.0, 1.0, 0.0);
         vec3 tp = vWPos * uTexScale;
         diffuseColor *= texture2D(map, tp.zy) * tw.x
                       + texture2D(map, tp.xz) * tw.y
@@ -590,6 +611,28 @@ function rockWallGeo(w, h, d, amt = 0.05, seed = 7) {
   return g;
 }
 
+// Removes invalid (NaN/Infinity) values from a geometry's UVs and normals. A single
+// broken value would corrupt every triangle that touches that vertex and show up as a
+// random-coloured patch instead of stone, so bad normals are recomputed and bad UVs
+// fall back to a neutral coordinate.
+function sanitizeGeometry(geo) {
+  if (!geo || !geo.attributes) return;
+  const bad = (attr) => {
+    if (!attr) return false;
+    const a = attr.array;
+    for (let i = 0; i < a.length; i++) if (!Number.isFinite(a[i])) return true;
+    return false;
+  };
+  if (bad(geo.attributes.uv)) {
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.array.length; i++) if (!Number.isFinite(uv.array[i])) uv.array[i] = 0;
+    uv.needsUpdate = true;
+  }
+  if (bad(geo.attributes.normal)) {
+    geo.computeVertexNormals();
+  }
+}
+
 const STEP_LIFT = { panel: 0, frame: 0.4, slab: 0.85, headstone: 1.25 };
 
 function place(group, mesh, pos, stepKey) {
@@ -600,8 +643,10 @@ function place(group, mesh, pos, stepKey) {
   if (mapped && mesh.geometry && !mesh.geometry.userData.boxUV) {
     // זרע קבוע לכל חלק (לפי מיקומו וסוג החלק) — ההיסט לא משתנה בין רינדורים
     const seed = Math.abs(pos.x * 37.1 + pos.y * 71.3 + pos.z * 13.7) + (STEP_LIFT[stepKey] || 0) * 5.1 + 1;
-    applyBoxUV(mesh.geometry, mapped.userData.uvMeter || 1.75, seed);
+    applyFaceUV(mesh.geometry, mapped.userData.uvMeter || 1.75, seed);
   }
+  // הגנה מפני UV/נורמל פגומים (NaN) — אחרת הפאה מקבלת טקסטורה "זבל" בצבעים.
+  sanitizeGeometry(mesh.geometry);
   // גימור "מבריק + צדדים מחוספסים": פאות הצד מקבלות חומר גס, המשטח העליון והחזית נשארים מלוטשים.
   const sideMat = mesh.material && !Array.isArray(mesh.material) ? mesh.material.userData?.rockSideMat : null;
   if (sideMat && mesh.geometry?.groups?.length >= 6) {
