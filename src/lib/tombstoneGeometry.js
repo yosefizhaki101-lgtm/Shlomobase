@@ -149,14 +149,18 @@ function addStoneShader(mat) {
 // orange-brown patches appear on edges, and the contrast is compressed toward white
 // so the veins read thin and fine on light, uniform Turkish marble.
 const STONE_MAP_CACHE = new Map();
-function getStoneMap(url) {
-  let entry = STONE_MAP_CACHE.get(url);
+function getStoneMap(url, baseColorHex = '#ffffff') {
+  // הגוון של האבן נצרב במפה עצמה: התמונה מנוטרלת, והצבע (טורקי, סרדו…) נשמר,
+  // כך שהמשטח לא מאבד את גוון האבן. מטמון נפרד לכל שילוב תמונה + גוון.
+  const tint = new THREE.Color(baseColorHex || '#ffffff');
+  const cacheKey = `${url}|${baseColorHex}`;
+  let entry = STONE_MAP_CACHE.get(cacheKey);
   if (entry) return entry.tex;
   const cv = document.createElement('canvas');
   cv.width = 4;
   cv.height = 4;
   const cvCtx = cv.getContext('2d');
-  cvCtx.fillStyle = '#e6e6e2';
+  cvCtx.fillStyle = `rgb(${Math.round(tint.r * 235)}, ${Math.round(tint.g * 235)}, ${Math.round(tint.b * 235)})`;
   cvCtx.fillRect(0, 0, 4, 4);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -165,7 +169,7 @@ function getStoneMap(url) {
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.userData.shared = true;
-  STONE_MAP_CACHE.set(url, { tex });
+  STONE_MAP_CACHE.set(cacheKey, { tex });
 
   loadImage(url).then((img) => {
     // חיתוך שוליים: פיקסלים כהים בקצה התמונה היו נמשכים לאורך הפאות כפסים כהים.
@@ -203,10 +207,11 @@ function getStoneMap(url) {
       for (let i = 0, p = 0; i < px.length; i += 4, p++) {
         // עקומה שמחזירה את גוני הביניים לבסיס ומשאירה רק ליבות עורק דקות
         const n = Math.max(0, Math.min(1, (light - lums[p]) / range));
-        const out = BASE - Math.pow(n, 1.45) * (BASE - VEIN);
-        px[i] = Math.max(0, out - 2);
-        px[i + 1] = out;
-        px[i + 2] = Math.min(255, out + 3);
+        // f=1 בגוון הבסיס של האבן ויורד בליבת העורק — הגוון נשמר והעורקים נראים
+        const f = (BASE - Math.pow(n, 1.45) * (BASE - VEIN)) / BASE;
+        px[i] = Math.min(255, tint.r * 255 * f);
+        px[i + 1] = Math.min(255, tint.g * 255 * f);
+        px[i + 2] = Math.min(255, tint.b * 255 * f);
       }
       ctx.putImageData(data, 0, 0);
     } catch { /* canvas tainted — the untinted photo is still drawn */ }
@@ -219,13 +224,17 @@ function getStoneMap(url) {
 // גרניט "מלח ופלפל" מתמונה: כל פיקסל מומר לגוון אפור אחיד לפי הבהירות בלבד,
 // כך שאין כתמים כחולים/כתומים — הבסיס בהיר אחיד והנקודות כהות, בדיוק כמו הדגימה.
 const RAW_MAP_CACHE = new Map();
-function getRawStoneMap(url) {
-  let tex = RAW_MAP_CACHE.get(url);
+function getRawStoneMap(url, baseColorHex = '#d6d6d6') {
+  // הצילום מנוטרל לגוון אחיד, והגוון של האבן (סרדו) נצרב חזרה במפה — הבסיס בצבע האבן,
+  // הגרגרים כהים ממנו. מטמון נפרד לכל שילוב תמונה + גוון.
+  const tint = new THREE.Color(baseColorHex || '#d6d6d6');
+  const cacheKey = `${url}|${baseColorHex}`;
+  let tex = RAW_MAP_CACHE.get(cacheKey);
   if (tex) return tex;
   const cv = document.createElement('canvas');
   cv.width = cv.height = 4;
   const rawCtx = cv.getContext('2d');
-  rawCtx.fillStyle = '#d6d6d6';
+  rawCtx.fillStyle = `rgb(${Math.round(tint.r * 255)}, ${Math.round(tint.g * 255)}, ${Math.round(tint.b * 255)})`;
   rawCtx.fillRect(0, 0, 4, 4);
   tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -233,7 +242,7 @@ function getRawStoneMap(url) {
   tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.userData.shared = true;
-  RAW_MAP_CACHE.set(url, tex);
+  RAW_MAP_CACHE.set(cacheKey, tex);
 
   loadImage(url).then((img) => {
     cv.width = img.width;
@@ -243,14 +252,14 @@ function getRawStoneMap(url) {
     try {
       const data = ctx.getImageData(0, 0, cv.width, cv.height);
       const px = data.data;
-      const LIGHT = 214, DARK = 58; // #D6D6D6 בסיס, #3A3A3A נקודות
+      const LIGHT = 214, DARK = 58; // בסיס בהיר וגרגרים כהים ביחס לגוון האבן
       for (let i = 0; i < px.length; i += 4) {
         const lum = (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255;
         const t = Math.min(1, Math.max(0, (lum - 0.22) / 0.5));
-        const v = DARK + (LIGHT - DARK) * Math.pow(t, 1.15);
-        px[i] = v;
-        px[i + 1] = v;
-        px[i + 2] = v;
+        const v = (DARK + (LIGHT - DARK) * Math.pow(t, 1.15)) / LIGHT;
+        px[i] = Math.min(255, tint.r * 255 * v);
+        px[i + 1] = Math.min(255, tint.g * 255 * v);
+        px[i + 2] = Math.min(255, tint.b * 255 * v);
       }
       ctx.putImageData(data, 0, 0);
     } catch { /* canvas tainted — נעשה שימוש בצילום המקורי */ }
@@ -493,7 +502,7 @@ function baseStoneMat(stone, textureUrl) {
       // מט, אחיד, בלי ברק ובלי החזרי סביבה — כדי שלא ייווצרו כתמים כהים/כחולים בפינות
       const rawMat = new THREE.MeshStandardMaterial({
         color: new THREE.Color('#ffffff'),
-        map: getRawStoneMap(stone.textureUrl),
+        map: getRawStoneMap(stone.textureUrl, stone.color),
         roughness: 1,
         metalness: 0,
         envMapIntensity: 0,
@@ -510,7 +519,7 @@ function baseStoneMat(stone, textureUrl) {
     }
     const mat = new THREE.MeshStandardMaterial({
       color: new THREE.Color('#ffffff'),
-      map: getStoneMap(stone.textureUrl),
+      map: getStoneMap(stone.textureUrl, stone.color),
       normalMap: nTex.normalMap,
       normalScale: new THREE.Vector2(nTex.nStr * 0.45, nTex.nStr * 0.45),
       roughness: stone.roughness ?? 0.25,
