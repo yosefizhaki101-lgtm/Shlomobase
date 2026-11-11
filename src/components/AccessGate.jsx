@@ -97,12 +97,10 @@ export default function AccessGate({ children }) {
         setCode('');
         setNotice('');
       } else if (data.reason === 'expired') {
-        setError('תוקף הקוד פג. הקוד תקף לעשר דקות בלבד.');
-        setNotice(
-          data.codeSent
-            ? 'נשלחה סיסמה חדשה למייל של בעל האפליקציה.'
-            : 'לא הצלחנו לשלוח סיסמה חדשה. נסו לרענן את העמוד.'
-        );
+        setError('פג תוקף הגישה. הזינו את הקוד שוב.');
+        setNotice('');
+      } else if (data.reason === 'throttled') {
+        setError('יותר מדי ניסיונות שגויים. נסו שוב בעוד עשר דקות.');
       } else {
         setError('הקוד שגוי. בדקו את הספרות ונסו שוב.');
       }
@@ -141,8 +139,7 @@ export default function AccessGate({ children }) {
           </div>
           <h1 className="font-heading text-xl font-semibold text-stone-900">האפליקציה נעולה</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-stone-500">
-            הזינו את סיסמת הגישה בת 6 הספרות. הגישה נפתחת לעשר דקות, ואחר כך ננעלת מחדש
-            ונשלחת סיסמה חדשה למייל של בעל האפליקציה.
+            הזינו את קוד הגישה. הגישה נפתחת לעשר דקות, ואחר כך יש להזין את הקוד שוב.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-3">
@@ -153,14 +150,14 @@ export default function AccessGate({ children }) {
               autoComplete="one-time-code"
               dir="ltr"
               maxLength={6}
-              placeholder="••••••"
+              placeholder="•••••"
               className="h-14 rounded-xl border-stone-200 text-center text-2xl tracking-[0.45em] text-stone-900 placeholder:text-stone-300"
             />
             {error && <p className="text-[12px] text-red-600">{error}</p>}
             {notice && !error && <p className="text-[12px] text-stone-500">{notice}</p>}
             <Button
               type="submit"
-              disabled={submitting || code.length < 6}
+              disabled={submitting || code.length < 4}
               className="h-12 w-full rounded-xl bg-stone-900 text-sm font-medium text-white hover:bg-stone-800 disabled:bg-stone-300"
             >
               {submitting ? 'בודק…' : 'פתיחת גישה'}
@@ -168,7 +165,7 @@ export default function AccessGate({ children }) {
           </form>
         </div>
         <p className="mt-4 text-center text-[11px] text-stone-400">
-          אין לכם קוד? הוא נשלח אוטומטית למייל של בעל האפליקציה בכל חלון של עשר דקות.
+          את הקוד מקבלים מבעל האפליקציה.
         </p>
       </div>
     </div>
