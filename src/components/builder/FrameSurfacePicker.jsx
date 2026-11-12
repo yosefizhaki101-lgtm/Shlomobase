@@ -5,12 +5,22 @@ export const FRAME_SURFACES = [
   { id: 'rock', name: 'מסגרת פראית', desc: 'משטח מסותת' },
 ];
 
-export default function FrameSurfacePicker({ selected, onSelect }) {
+export default function FrameSurfacePicker({
+  selected,
+  onSelect,
+  title = 'מסגרת חלקה או פראית',
+  smoothLabel = 'מסגרת חלקה',
+  rockLabel = 'מסגרת פראית',
+}) {
+  const surfaces = [
+    { ...FRAME_SURFACES[0], name: smoothLabel },
+    { ...FRAME_SURFACES[1], name: rockLabel },
+  ];
   return (
     <div>
-      <h4 className="text-[10px] font-medium text-stone-500 mb-1">מסגרת חלקה או פראית</h4>
+      <h4 className="text-[10px] font-medium text-stone-500 mb-1">{title}</h4>
       <div className="grid grid-cols-2 gap-1.5">
-        {FRAME_SURFACES.map((s) => {
+        {surfaces.map((s) => {
           const active = selected === s.id;
           return (
             <button

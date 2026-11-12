@@ -11,11 +11,15 @@ import StonePreview from '@/components/tombstone/StonePreview';
 import LeftPanel from '@/components/builder/LeftPanel';
 import RightPanel from '@/components/builder/RightPanel';
 import RenderModal from '@/components/builder/RenderModal';
+import ShareWhatsAppDialog from '@/components/builder/ShareWhatsAppDialog';
 
 const emptyDesign = {
   cemeteryProfile: 'default',
   tombstoneType: 'regular',
+  sizeVariant: 'large',
   stoneType: 'black_granite',
+  stoneSurface: null,
+  masadHeightCm: null,
   panel: ['panel_15'],
   frame: ['frame_25_rock'],
   frameSurface: null,
@@ -42,6 +46,11 @@ const emptyDesign = {
   panelStone: null,
   frameStone: null,
   slabStone: null,
+  extraPlateStone: null,
+  extraPlateColor: null,
+  extraPlateHeightCm: 3,
+  extraPlateWidthCm: null,
+  extraPlateLengthCm: null,
   headstoneStone: null,
   finish: null,
   panelFinish: null,
@@ -75,6 +84,7 @@ const emptyDesign = {
   completionDate: '',
   contactName: '',
   contactPhone: '',
+  sharePhone: '',
   contactEmail: '',
   notes: '',
 };
@@ -90,6 +100,7 @@ export default function Builder() {
   const [partTextures, setPartTextures] = useState([]);
   const [glbModels, setGlbModels] = useState([]);
   const [mobileTab, setMobileTab] = useState('design');
+  const [shareOpen, setShareOpen] = useState(false);
   const previewRef = useRef(null);
 
   useEffect(() => {
@@ -187,25 +198,32 @@ export default function Builder() {
     }
   };
 
-  const shareToWhatsApp = () => {
+  const saveImage = () => {
     const dataUrl = previewRef.current?.captureImage?.();
-    if (dataUrl) {
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'עיצוב-מצבה.png';
-      a.click();
-    }
+    if (!dataUrl) return;
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'עיצוב-מצבה.png';
+    a.click();
+  };
+
+  // שיתוף ישיר למספר שלי בלבד — אין אפשרות לבחור נמען אחר
+  const sendToOwnWhatsApp = (intlPhone, typedPhone) => {
+    saveImage();
+    if (!design.contactPhone) update({ contactPhone: typedPhone });
+    update({ sharePhone: typedPhone });
     const stone = STONE_TYPES.find((s) => s.id === design.stoneType);
     const price = calcPrice(design);
     const lines = [
       `גוף: ${stone?.name || ''}`,
       design.deceasedName && `שם הנפטר/ת: ${design.deceasedName}`,
       design.contactName && `איש קשר: ${design.contactName}`,
-      design.contactPhone && `טלפון: ${design.contactPhone}`,
+      `טלפון: ${design.contactPhone || typedPhone}`,
       design.showPrice !== false && `הערכת מחיר: ${price.withVat} ₪`,
     ].filter(Boolean).join('\n');
     const msg = encodeURIComponent(`שלום,\nעיצבתי מצבה דרך האתר.\n\n${lines}\n\nמצרף/ת תמונה של העיצוב.`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${intlPhone}?text=${msg}`, '_blank');
+    setShareOpen(false);
   };
 
   const submit = async () => {
@@ -312,10 +330,10 @@ export default function Builder() {
           {/* Action bar */}
           <div className="flex-shrink-0 border-t border-stone-200 bg-white px-4 py-2 flex items-center justify-center gap-2">
             <span className="text-[11px] text-stone-400 ml-2">שלב {step + 1}/{STEPS.length}</span>
-            <button type="button" onClick={shareToWhatsApp} className="flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors">
+            <button type="button" onClick={() => setShareOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors">
               שתף
             </button>
-            <button type="button" onClick={shareToWhatsApp} className="flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors">
+            <button type="button" onClick={saveImage} className="flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors">
               שמור תמונה
             </button>
             <button
@@ -387,7 +405,7 @@ export default function Builder() {
         <div className="flex-shrink-0 border-t border-stone-200 bg-white p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] flex gap-2">
           <button
             type="button"
-            onClick={shareToWhatsApp}
+            onClick={() => setShareOpen(true)}
             className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[#25D366] text-white text-xs font-medium py-2 transition-colors"
           >
             שתף בווצאפ
@@ -428,6 +446,14 @@ export default function Builder() {
         <span aria-hidden="true">·</span>
         <span>הנגשה לפי ת״י 5568 AA</span>
       </footer>
+
+      {/* Share to my own WhatsApp only */}
+      <ShareWhatsAppDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        initialPhone={design.sharePhone || design.contactPhone}
+        onSend={sendToOwnWhatsApp}
+      />
 
       {/* Photorealistic render modal */}
       <RenderModal

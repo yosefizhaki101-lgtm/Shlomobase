@@ -11,6 +11,7 @@ import {
   STONE_TYPES,
   TOMBSTONE_TYPES,
   TOMBSTONE_DIMENSIONS,
+  getTombstoneDims,
   PANELS,
   FRAMES,
   ROCK_FRAME_GEOMS,
@@ -590,6 +591,14 @@ function sharpGeo(w, h, d) {
   return new THREE.BoxGeometry(Math.max(0.01, w), Math.max(0.01, h), Math.max(0.01, d));
 }
 
+// Extrudes a flat 2D shape (x = רוחב, y = אורך הפלטה) לשכבה אופקית בגובה h
+function extrudeFlat(shape, h) {
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(0.001, h), bevelEnabled: false });
+  g.rotateX(Math.PI / 2);
+  g.translate(0, Math.max(0.001, h), 0);
+  return g;
+}
+
 // Rock-pitched (tuvza) geometry: angular, faceted displacement
 // that mimics natural cleaved stone with deep gouges and irregular chunks.
 function rockGeo(w, h, d, amt = 0.06, seed = 7) {
@@ -747,7 +756,7 @@ function heartShape() {
   return s;
 }
 
-function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = null, slabW = null, slabL = null, forceInsetCm = 0 }) {
+function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = null, slabW = null, slabL = null, forceInsetCm = 0, surface = null }) {
   const mat = stoneMat(resolveOverride(stone, def.overrideColor), textureUrl, true);
   const h = customHeight || def.height || 0.1;
   // Top panel layer is always 2cm smaller than the slab above (fixed construction standard)
@@ -764,10 +773,14 @@ function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = nul
       place(group, new THREE.Mesh(sharpGeo(W + 0.2, h * 0.55, L + 0.12), mat), new THREE.Vector3(0, y + h * 0.27, 0), 'panel');
       place(group, new THREE.Mesh(sharpGeo(W, h * 0.45, L + 0.05), mat), new THREE.Vector3(0, y + h * 0.77, 0), 'panel');
       break;
-    case 'base_beveled':
+    case 'base_beveled': {
       // Inset panels use exact W,L (already reduced above); regular panels widen by 0.2/0.12
-      place(group, new THREE.Mesh(sharpGeo(insetCm ? W : W + 0.2, h, insetCm ? L : L + 0.12), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
+      const bw = insetCm ? W : W + 0.2;
+      const bl = insetCm ? L : L + 0.12;
+      const bgeo = surface === 'rock' ? rockGeo(bw, h, bl, 0.04, 29) : sharpGeo(bw, h, bl);
+      place(group, new THREE.Mesh(bgeo, mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
+    }
     case 'base_tuvza':
       place(group, new THREE.Mesh(rockGeo(W + 0.2, h, L + 0.12, 0.04, 23), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
@@ -779,9 +792,12 @@ function buildPanel({ W, L, y, stone, def, group, textureUrl, customHeight = nul
       break;
     }
     case 'base_single_tier':
-    default:
-      place(group, new THREE.Mesh(sharpGeo(W + 0.2, h, L + 0.12), mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
+    default: {
+      // גימור מסותת = אותו פאנל, עם פאה פראית
+      const geo = surface === 'rock' ? rockGeo(W + 0.2, h, L + 0.12, 0.045, 17) : sharpGeo(W + 0.2, h, L + 0.12);
+      place(group, new THREE.Mesh(geo, mat), new THREE.Vector3(0, y + h / 2, 0), 'panel');
       break;
+    }
   }
   return { topY: y + h };
 }
@@ -854,7 +870,7 @@ function buildFrame({ W, L, y, stone, def, group, textureUrl, customHeight = nul
   return { topY: y + wallH + (capMat ? capH : 0) };
 }
 
-function buildSlab({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null }) {
+function buildSlab({ W, L, y, stone, def, group, textureUrl, customHeight = null, customW = null, customL = null, surface = null }) {
   const mat = stoneMat(resolveOverride(stone, def.overrideColor), textureUrl, true);
   // Per-component dimension overrides (cm → m); fall back to shared W/L
   if (customW) W = customW;
@@ -968,10 +984,49 @@ function buildSlab({ W, L, y, stone, def, group, textureUrl, customHeight = null
       place(group, new THREE.Mesh(sharpGeo(W * 0.96 * 0.95, h * 0.3, 0.06), glassMat(0xddaacc, 0.6)), new THREE.Vector3(0, y + h * 0.9, 0), 'slab');
       break;
     }
-    case 'slab_full_solid':
-    default:
-      place(group, new THREE.Mesh(sharpGeo(W * 0.96, h, L * 0.94), mat), new THREE.Vector3(0, y + h / 2, 0), 'slab');
+    case 'slab_split_wave': {
+      // שני חצאים עם קו חיתוך גלי — פיצול לשני קברים
+      const amp = 0.035;
+      const steps = 24;
+      const len = L * 0.92;
+      const halfW = W * 0.48;
+      [-1, 1].forEach((side) => {
+        const shape = new THREE.Shape();
+        shape.moveTo(side * halfW, -len / 2);
+        for (let i = 0; i <= steps; i++) {
+          const z = -len / 2 + (len * i) / steps;
+          shape.lineTo(side * (0.012 + amp * (0.5 + 0.5 * Math.sin((i / steps) * Math.PI * 4))), z);
+        }
+        shape.lineTo(side * halfW, len / 2);
+        shape.closePath();
+        place(group, new THREE.Mesh(extrudeFlat(shape, h), mat), new THREE.Vector3(0, y, 0), 'slab');
+      });
       break;
+    }
+    case 'slab_split_diagonal': {
+      // שני חצאים עם חיתוך אלכסוני מפינה לפינה
+      const halfW = W * 0.48;
+      const len = L * 0.92;
+      const a = new THREE.Shape();
+      a.moveTo(-halfW, -len / 2);
+      a.lineTo(halfW, -len / 2);
+      a.lineTo(halfW, len / 2);
+      a.closePath();
+      const b = new THREE.Shape();
+      b.moveTo(-halfW, -len / 2);
+      b.lineTo(halfW, len / 2);
+      b.lineTo(-halfW, len / 2);
+      b.closePath();
+      place(group, new THREE.Mesh(extrudeFlat(a, h), mat), new THREE.Vector3(0, y, 0), 'slab');
+      place(group, new THREE.Mesh(extrudeFlat(b, h), mat), new THREE.Vector3(0, y, 0), 'slab');
+      break;
+    }
+    case 'slab_full_solid':
+    default: {
+      const geo = surface === 'rock' ? rockGeo(W * 0.96, h, L * 0.94, 0.035, 11) : sharpGeo(W * 0.96, h, L * 0.94);
+      place(group, new THREE.Mesh(geo, mat), new THREE.Vector3(0, y + h / 2, 0), 'slab');
+      break;
+    }
   }
   return { topY: y + h };
 }
@@ -1017,6 +1072,75 @@ function buildHeadstoneOne({ W, L, y, stone, def, group, xOff = 0, zOff = 0, tex
   const rearZ = -L * 0.47 + hsD / 2 + zOff + offsetZ;
   const cx = xOff + offsetX;
   switch (def.geom) {
+    case 'headstone_none':
+      return { topY: y, decal: null };
+    case 'headstone_side_wall':
+    case 'headstone_side_wall_heart':
+    case 'headstone_side_wall_wave': {
+      // קירות צד — קיר דק לאורך כל צד של המצבה
+      const wallH = customH || 0.45;
+      const wallT = 0.1 * thickness;
+      const wallLen = L * 0.9;
+      const variant = def.geom.replace('headstone_side_wall', '');
+      const wallGeo = (len, hh) => {
+        if (variant !== '_wave') return sharpGeo(wallT, hh, len);
+        const shape = new THREE.Shape();
+        shape.moveTo(-len / 2, 0);
+        shape.lineTo(len / 2, 0);
+        for (let i = 0; i <= 24; i++) {
+          const t = i / 24;
+          shape.lineTo(len / 2 - t * len, hh * (0.8 + 0.2 * Math.sin(t * Math.PI * 3)));
+        }
+        shape.closePath();
+        const g = new THREE.ExtrudeGeometry(shape, { depth: wallT, bevelEnabled: false });
+        g.translate(0, 0, -wallT / 2);
+        g.rotateY(Math.PI / 2);
+        return g;
+      };
+      [-1, 1].forEach((side) => {
+        const wx = side * (W * 0.48 - wallT / 2);
+        place(group, new THREE.Mesh(wallGeo(wallLen, wallH), mat), new THREE.Vector3(wx, y, 0), 'headstone');
+        if (variant === '_heart') {
+          const hg = new THREE.ExtrudeGeometry(heartShape(), { depth: 0.04, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.008 });
+          hg.scale(wallH * 0.5, wallH * 0.5, 1);
+          hg.center();
+          const heart = new THREE.Mesh(hg, mat);
+          heart.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+          place(group, heart, new THREE.Vector3(wx + side * (wallT / 2 + 0.015), y + wallH * 0.7, 0), 'headstone');
+        }
+      });
+      return { topY: y + wallH, decal: null };
+    }
+    case 'headstone_wave_top': {
+      // אבן ראש מלבנית עם גג גלי
+      const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.67 * scale));
+      const shape = new THREE.Shape();
+      shape.moveTo(-hsW / 2, 0);
+      shape.lineTo(hsW / 2, 0);
+      shape.lineTo(hsW / 2, hsH * 0.84);
+      for (let i = 0; i <= 24; i++) {
+        const t = i / 24;
+        shape.lineTo(hsW / 2 - t * hsW, hsH * (0.84 + 0.16 * Math.cos(t * Math.PI * 2)));
+      }
+      shape.closePath();
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: hsD, bevelEnabled: true, bevelSize: 0.01, bevelThickness: 0.01, bevelSegments: 2 });
+      geo.translate(0, 0, -hsD / 2);
+      const m = new THREE.Mesh(geo, mat);
+      place(group, m, new THREE.Vector3(cx, y, rearZ), 'headstone');
+      return decalResult(y + hsH, m, rearZ, hsD, hsW * 0.85, hsH * 0.74);
+    }
+    case 'headstone_pillows': {
+      // זוג כריות אבן זו לצד זו במקום אבן ראש
+      const totalW = (customW || (W * 0.9 * scale));
+      const hsH = (customH || (W * 0.42 * scale));
+      const pw = Math.max(0.1, totalW / 2 - 0.03);
+      const pillowR = Math.min(0.09, hsH * 0.35, hsD * 0.4);
+      const left = new THREE.Mesh(smoothGeo(pw, hsH, hsD, pillowR), mat);
+      place(group, left, new THREE.Vector3(cx - (pw / 2 + 0.02), y + hsH / 2, rearZ), 'headstone');
+      const right = new THREE.Mesh(smoothGeo(pw, hsH, hsD, pillowR), mat);
+      place(group, right, new THREE.Vector3(cx + (pw / 2 + 0.02), y + hsH / 2, rearZ), 'headstone');
+      return decalResult(y + hsH, left, rearZ, hsD, pw * 0.9, hsH * 0.8);
+    }
     case 'headstone_dome_top': {
       const hsW = (customW || (W * 0.85 * scale)), hsH = (customH || (W * 0.59 * scale));
       const body = new THREE.Mesh(sharpGeo(hsW, hsH, hsD), mat);
@@ -1631,8 +1755,8 @@ export function buildTombstone(design, glbModels = null) {
   const slabStone = resolveStoneForPart(design, 'slabStone');
   const hsStone = resolveStoneForPart(design, 'headstoneStone');
   const tt = TOMBSTONE_TYPES.find((t) => t.id === design.tombstoneType) || TOMBSTONE_TYPES[1];
-  // מידות ברירת מחדל לפי סוג המצבה: יחיד 75×170, כפולה 140×180, משפחתית 190×190, קטנה 70×70
-  const dims = TOMBSTONE_DIMENSIONS[tt.id] || TOMBSTONE_DIMENSIONS.regular;
+  // מידות ברירת מחדל לפי סוג המצבה ולפי מידה גדולה/קטנה (רוחב × אורך)
+  const dims = getTombstoneDims(tt.id, design.sizeVariant);
   const defaultW = dims.width / 100;
   const defaultL = dims.length / 100;
   const W = design.panelWidthCm ? design.panelWidthCm / 100 : defaultW;
@@ -1653,6 +1777,14 @@ export function buildTombstone(design, glbModels = null) {
   let decalInfo = null;
   let slabTopY = 0;
 
+  // מסד (קוביה) — בסיס מלא בגובה לבחירה מתחת לכל שכבות המצבה
+  if (design.masadHeightCm) {
+    const mh = design.masadHeightCm / 100;
+    const masadMat = stoneMat(panelStone, design.panelTextureUrl);
+    place(group, new THREE.Mesh(sharpGeo(W * 0.98, mh, L * 0.98), masadMat), new THREE.Vector3(0, mh / 2, 0), 'panel');
+    y = mh;
+  }
+
   // Panel layers — support multiple stacked panels (e.g., flooring + panel 10 + raise 5 black).
   // Layers stack from bottom to top in selection order.
   const panelLayers = Array.isArray(design.panel) ? design.panel : [design.panel];
@@ -1667,7 +1799,7 @@ export function buildTombstone(design, glbModels = null) {
     const ch = isLast && design.panelHeightCm ? design.panelHeightCm / 100 : null;
     let panelGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'panel', optionId: panelId, stone: panelStone, y, textureUrl: design.panelTextureUrl });
     if (!panelGlbUsed) {
-      y = buildPanel({ ...ctx, y, stone: panelStone, def: pDef, textureUrl: design.panelTextureUrl, customHeight: ch, slabW, slabL, forceInsetCm: isLast && !slabDimsCustom ? 2 : 0 }).topY;
+      y = buildPanel({ ...ctx, y, stone: panelStone, def: pDef, textureUrl: design.panelTextureUrl, customHeight: ch, slabW, slabL, forceInsetCm: isLast && !slabDimsCustom ? 2 : 0, surface: design.stoneSurface || null }).topY;
     } else {
       y += pDef.height || 0.15;
     }
@@ -1682,7 +1814,7 @@ export function buildTombstone(design, glbModels = null) {
     const fh = isLast && design.frameHeightCm ? design.frameHeightCm / 100 : null;
     let frameGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'frame', optionId: frameId, stone: frameStone, y, textureUrl: design.frameTextureUrl });
     if (!frameGlbUsed) {
-      y = buildFrame({ ...ctx, y, stone: frameStone, def: fDef, textureUrl: design.frameTextureUrl, customHeight: fh, customW: design.frameWidthCm ? design.frameWidthCm / 100 : null, customL: design.frameLengthCm ? design.frameLengthCm / 100 : null, surface: design.frameSurface || null }).topY;
+      y = buildFrame({ ...ctx, y, stone: frameStone, def: fDef, textureUrl: design.frameTextureUrl, customHeight: fh, customW: design.frameWidthCm ? design.frameWidthCm / 100 : null, customL: design.frameLengthCm ? design.frameLengthCm / 100 : null, surface: design.frameSurface || design.stoneSurface || null }).topY;
     } else {
       y += fDef.height || 0.25;
     }
@@ -1697,12 +1829,31 @@ export function buildTombstone(design, glbModels = null) {
     const sh = isLast && design.slabHeightCm ? design.slabHeightCm / 100 : null;
     let slabGlbUsed = tryGlbComponent({ group, glbModels, componentType: 'slab', optionId: slabId, stone: slabStone, y, textureUrl: design.slabTextureUrl });
     if (!slabGlbUsed) {
-      y = buildSlab({ ...ctx, y, stone: slabStone, def: sDef, textureUrl: design.slabTextureUrl, customHeight: sh, customW: design.slabWidthCm ? design.slabWidthCm / 100 : null, customL: design.slabLengthCm ? design.slabLengthCm / 100 : null }).topY;
+      y = buildSlab({ ...ctx, y, stone: slabStone, def: sDef, textureUrl: design.slabTextureUrl, customHeight: sh, customW: design.slabWidthCm ? design.slabWidthCm / 100 : null, customL: design.slabLengthCm ? design.slabLengthCm / 100 : null, surface: design.stoneSurface || null }).topY;
     } else {
       y += sDef.height || 0.1;
     }
   }
   slabTopY = y;
+
+  // פלטה נוספת בצבע/אבן אחרת — למשל פלטת גרניט על גבי אבן חברון
+  if (design.extraPlateStone) {
+    const plateH = (design.extraPlateHeightCm || 3) / 100;
+    const plateW = design.extraPlateWidthCm ? design.extraPlateWidthCm / 100 : slabW * 0.94;
+    const plateL = design.extraPlateLengthCm ? design.extraPlateLengthCm / 100 : slabL * 0.9;
+    const plateStone = resolveStoneForPart(
+      { ...design, slabStone: design.extraPlateStone, slabColor: design.extraPlateColor || null },
+      'slabStone'
+    );
+    place(
+      group,
+      new THREE.Mesh(sharpGeo(plateW, plateH, plateL), stoneMat(plateStone, null, false)),
+      new THREE.Vector3(0, slabTopY + plateH / 2, 0),
+      'slab'
+    );
+    slabTopY += plateH;
+    y = slabTopY;
+  }
 
   // Headstone layers — support multiple headstones placed side by side
   const hsLayers = Array.isArray(design.headstoneTop) ? design.headstoneTop : [design.headstoneTop];
@@ -1758,7 +1909,14 @@ export function buildTombstone(design, glbModels = null) {
     const nerStyle = design.nerHouseStyle || 'arched';
     const nerX = design.nerHouseOffsetX || 0;
     const nerZ = design.nerHouseOffsetZ || 0;
-    if (design.nerHouse === 'front') {
+    if (design.nerHouse === 'internal') {
+      // בית נר פנימי — שקוע בתוך הפלטה, במיקום לבחירה
+      const ner = buildNerHouse(nerSize, nerStyle);
+      ner.position.set(nerX, slabTopY - 0.015, L * 0.06 + nerZ);
+      ner.userData.dragKey = 'ner';
+      ner.children.forEach((c) => { c.castShadow = true; c.receiveShadow = true; });
+      group.add(ner);
+    } else if (design.nerHouse === 'front') {
       // Free-standing candle house on the slab
       const ner = buildNerHouse(nerSize, nerStyle);
       ner.position.set(nerX, slabTopY, L * 0.30 + nerZ);

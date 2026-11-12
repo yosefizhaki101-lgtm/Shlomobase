@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_DIMENSIONS, TOMBSTONE_RANGES, PANELS, FRAMES, ROCK_FRAME_GEOMS, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
+import { STEPS, STONE_TYPES, TOMBSTONE_TYPES, TOMBSTONE_RANGES, getTombstoneDims, SIZE_VARIANTS, CUSTOM_SIZE_NOTE, HEIGHT_PRESETS, SLAB_SPLITS, PANELS, FRAMES, ROCK_FRAME_GEOMS, SLABS, HEADSTONE_TOPS, HEADSTONE_PLACEMENTS, ACCESSORIES, LETTERING_TYPES, COLORS } from '@/lib/tombstoneOptions';
 import FrameSurfacePicker from '@/components/builder/FrameSurfacePicker';
 import OptionCard from '@/components/builder/OptionCard';
 import MaterialSelector from '@/components/tombstone/MaterialSelector';
@@ -59,6 +59,9 @@ export default function LeftPanel({ step, setStep, design, update }) {
   const [addFloor, setAddFloor] = useState({ panel: false, frame: false });
   // סוג המצבה קובע את טווחי הרוחב והאורך המקובלים
   const dimRanges = TOMBSTONE_RANGES[design.tombstoneType] || TOMBSTONE_RANGES.regular;
+  // פיצול הפלטה הנוכחי נגזר מפריט הפלטה שנבחר
+  const activeSlab = (Array.isArray(design.slab) ? design.slab : [design.slab]).filter(Boolean).slice(-1)[0];
+  const currentSplit = (SLAB_SPLITS.find((s) => s.slabId === activeSlab) || SLAB_SPLITS[0]).id;
 
   // First pick replaces the existing floor; once "add floor" is on, picks stack another floor on top.
   const pickLayer = (modeKey, field, id, current, max = 3) => {
@@ -79,16 +82,16 @@ export default function LeftPanel({ step, setStep, design, update }) {
               <h4 className="text-[10px] font-medium text-stone-500 mb-1">סוג מצבה</h4>
               <div className="grid grid-cols-2 gap-1.5">
                 {TOMBSTONE_TYPES.map((t) => {
-                  const dims = TOMBSTONE_DIMENSIONS[t.id];
+                  const dims = getTombstoneDims(t.id, design.sizeVariant);
                   return (
                     <OptionCard
                       key={t.id}
-                      option={{ ...t, desc: `${dims.width}×${dims.length} ס"מ` }}
+                      option={{ ...t, desc: `${dims.length}×${dims.width} ס"מ` }}
                       active={design.tombstoneType === t.id}
                       onClick={() => update({
                         tombstoneType: t.id,
-                        panelWidthCm: dims?.width || null,
-                        panelLengthCm: dims?.length || null,
+                        panelWidthCm: dims.length ? dims.width : null,
+                        panelLengthCm: dims.length ? dims.length : null,
                         ...RESET_PART_DIMS,
                         ...TYPE_PRESETS[t.id],
                       })}
@@ -97,6 +100,25 @@ export default function LeftPanel({ step, setStep, design, update }) {
                   );
                 })}
               </div>
+              <div className="mt-2">
+                <h4 className="text-[10px] font-medium text-stone-500 mb-1">מידה</h4>
+                <PillCarousel
+                  options={SIZE_VARIANTS}
+                  selected={design.sizeVariant || 'large'}
+                  onSelect={(v) => {
+                    const dims = getTombstoneDims(design.tombstoneType, v);
+                    update({
+                      sizeVariant: v,
+                      panelWidthCm: dims.width,
+                      panelLengthCm: dims.length,
+                      ...RESET_PART_DIMS,
+                    });
+                  }}
+                />
+              </div>
+              <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[10px] leading-relaxed text-amber-800">
+                {CUSTOM_SIZE_NOTE}
+              </p>
             </div>
             <div>
               <h4 className="text-[10px] font-medium text-stone-500 mb-1">חומר וצבע</h4>
@@ -107,6 +129,13 @@ export default function LeftPanel({ step, setStep, design, update }) {
                 onColorSelect={(v) => update({ colorOverride: v })}
               />
             </div>
+            <FrameSurfacePicker
+              title="גימור פני האבן"
+              smoothLabel="אבן חלקה"
+              rockLabel="אבן מסותתת"
+              selected={design.stoneSurface || 'smooth'}
+              onSelect={(v) => update({ stoneSurface: v })}
+            />
           </div>
         );
       case 1: {
@@ -141,6 +170,14 @@ export default function LeftPanel({ step, setStep, design, update }) {
               design={design}
               update={update}
             />
+            <div>
+              <h4 className="text-[10px] font-medium text-stone-500 mb-1">מסד (קוביה) מתחת למצבה</h4>
+              <PillCarousel
+                options={[{ id: 'off', name: 'ללא' }, ...HEIGHT_PRESETS.map((h) => ({ id: String(h), name: `${h} ס"מ` }))]}
+                selected={design.masadHeightCm ? String(design.masadHeightCm) : 'off'}
+                onSelect={(v) => update({ masadHeightCm: v === 'off' ? null : Number(v) })}
+              />
+            </div>
           </div>
         );
       }
@@ -224,14 +261,61 @@ export default function LeftPanel({ step, setStep, design, update }) {
                 onColorSelect={(v) => update({ [colorField]: v })}
               />
             </div>
+            {step === 3 && (
+              <div>
+                <h4 className="text-[10px] font-medium text-stone-500 mb-1">פיצול הפלטה</h4>
+                <PillCarousel
+                  options={SLAB_SPLITS}
+                  selected={currentSplit}
+                  onSelect={(v) => update({ slab: [SLAB_SPLITS.find((s) => s.id === v).slabId] })}
+                />
+              </div>
+            )}
+            {step === 3 && (
+              <div className="rounded-lg border border-stone-200 bg-stone-50/60 p-2 space-y-2">
+                <h4 className="text-[10px] font-medium text-stone-500">פלטה נוספת בצבע אחר</h4>
+                <MaterialSelector
+                  selected={design.extraPlateStone || design.stoneType}
+                  onSelect={(v) => update({ extraPlateStone: v })}
+                  colorOverride={design.extraPlateColor || null}
+                  onColorSelect={(v) => update({ extraPlateColor: v })}
+                />
+                <PillCarousel
+                  options={[
+                    { id: 'off', name: 'ללא פלטה נוספת' },
+                    { id: '3', name: '3 ס"מ' },
+                    { id: '5', name: '5 ס"מ' },
+                    { id: '8', name: '8 ס"מ' },
+                  ]}
+                  selected={design.extraPlateStone ? String(design.extraPlateHeightCm || 3) : 'off'}
+                  onSelect={(v) => (v === 'off'
+                    ? update({ extraPlateStone: null, extraPlateColor: null })
+                    : update({ extraPlateStone: design.extraPlateStone || 'black_granite', extraPlateHeightCm: Number(v) }))}
+                />
+              </div>
+            )}
             <DimensionEditor
               title={dimTitleMap[step]}
-              fields={dimFieldsMap[step]}
+              fields={step === 3 && design.extraPlateStone
+                ? [
+                    ...dimFieldsMap[3],
+                    { key: 'extraPlateWidthCm', label: 'רוחב פלטה נוספת', min: 20, max: dimRanges.width[1], step: 5 },
+                    { key: 'extraPlateLengthCm', label: 'אורך פלטה נוספת', min: 20, max: dimRanges.length[1], step: 5 },
+                  ]
+                : dimFieldsMap[step]}
               design={design}
               update={update}
             />
             {step === 4 && (
               <div className="space-y-3">
+                <div>
+                  <h4 className="text-[10px] font-medium text-stone-500 mb-1">גובה אבן הראש</h4>
+                  <PillCarousel
+                    options={HEIGHT_PRESETS.map((h) => ({ id: String(h), name: `${h} ס"מ` }))}
+                    selected={design.headstoneHeightCm ? String(design.headstoneHeightCm) : ''}
+                    onSelect={(v) => update({ headstoneHeightCm: Number(v) })}
+                  />
+                </div>
                 <div>
                   <h4 className="text-[10px] font-medium text-stone-500 mb-1">מיקום אבן הראש</h4>
                   <PillCarousel

@@ -34,10 +34,10 @@ export const STONE_TYPES = [
   {
     id: 'turkish_marble',
     name: 'טורקי',
-    desc: 'שיש טורקי בגוון אפור־לבן קריר עם ורידים דקים וגימור מבריק',
-    swatch: 'linear-gradient(135deg, #E6EAEC 0%, #C2C8CB 100%)',
+    desc: 'שיש טורקי לבן־קריר עם ורידים כהים ובוהקים וגימור מבריק',
+    swatch: 'linear-gradient(135deg, #F2F7FA 0%, #BCC9D2 100%)',
     kind: 'cloud_grey',
-    color: '#D8DCDE',
+    color: '#E2EBF1',
     roughness: 0.25,
     metalness: 0.01,
     polish: 0.35,
@@ -47,10 +47,10 @@ export const STONE_TYPES = [
   {
     id: 'hebron',
     name: 'חברון',
-    desc: 'אבן חברון - שמנת־לבנה חמה ואחידה עם גרעון עדין',
-    swatch: 'linear-gradient(135deg, #FAF4EE 0%, #E4DCD5 100%)',
+    desc: 'אבן חברון - שמנת חמה ועשירה עם גרעון עדין',
+    swatch: 'linear-gradient(135deg, #FDF3E3 0%, #E3D2B8 100%)',
     kind: 'hebron',
-    color: '#F2EBE5',
+    color: '#F8EDDD',
     roughness: 0.55,
     metalness: 0.01,
     polish: 0.3,
@@ -58,13 +58,25 @@ export const STONE_TYPES = [
   {
     id: 'halila',
     name: 'חלילה',
-    desc: 'אבן חלילה - בז\'־דבש חם עם גוונים עפרוניים וגימור מושחז',
-    swatch: 'linear-gradient(135deg, #E3CCAA 0%, #B59B76 100%)',
+    desc: 'אבן חלילה - דבש־זהב חם עם גוונים עפרוניים וגימור מושחז',
+    swatch: 'linear-gradient(135deg, #EFD199 0%, #A9854F 100%)',
     kind: 'halila',
-    color: '#D9BE8A',
+    color: '#E3C079',
     roughness: 0.55,
     metalness: 0.01,
     polish: 0.25,
+  },
+  {
+    id: 'sanderin',
+    name: 'סנדרין',
+    desc: 'אבן סנדרין בגוון חולי־ורדרד חם עם גרעון עדין וגימור מושחז',
+    swatch: 'linear-gradient(135deg, #F0DDC0 0%, #C8A987 100%)',
+    kind: 'halila',
+    color: '#E0C7A2',
+    roughness: 0.55,
+    metalness: 0.01,
+    polish: 0.3,
+    envMapIntensity: 1.1,
   },
   {
     id: 'sardo',
@@ -84,15 +96,15 @@ export const STONE_TYPES = [
     id: 'red_stone',
     name: 'אדום',
     desc: 'גרניט אדום־חום מלוטש עם נקודות שחורות ולבנות',
-    swatch: 'linear-gradient(135deg, #8E3A32 0%, #4E1612 100%)',
+    swatch: 'linear-gradient(135deg, #A83425 0%, #54100A 100%)',
     kind: 'granite',
-    color: '#7A2A24',
-    roughness: 0.04,
+    color: '#96281B',
+    roughness: 0.03,
     metalness: 0.02,
-    polish: 0.9,
+    polish: 0.92,
     clearcoat: 1,
-    clearcoatRoughness: 0.015,
-    envMapIntensity: 3.2,
+    clearcoatRoughness: 0.012,
+    envMapIntensity: 3.8,
   },
   {
     id: 'orion_belen',
@@ -139,6 +151,7 @@ export const DEFAULT_FINISHES = {
   turkish_marble: 'matte',
   hebron: 'matte',
   halila: 'matte',
+  sanderin: 'matte',
   sardo: 'matte',
   red_stone: 'polish',
   orion_belen: 'polish',
@@ -155,28 +168,50 @@ STONE_TYPES.forEach((s) => {
 // 140×180 (במקורות 120–160 רוחב), מצבה משפחתית — שלוש חלקות ויותר, 190×190,
 // ו"חצי מצבה" (מצבה קטנה) 70×70. הגובה הכולל מוגבל בדרך כלל ל-140 ס"מ מהיסוד,
 // ובבתי עלמין מסוימים ל-80 או 60 ס"מ — המידות הסופיות טעונות אישור חברה קדישא.
+// המידות התקניות (ס"מ, רוחב × אורך) — לכל סוג מצבה יש מידה גדולה ומידה קטנה
 export const TOMBSTONE_DIMENSIONS = {
-  small:   { width: 70,  length: 70,  maxHeight: 140 },
-  regular: { width: 75,  length: 170, maxHeight: 140 },
-  family:  { width: 190, length: 190, maxHeight: 140 },
-  double:  { width: 140, length: 180, maxHeight: 140 },
+  regular: { large: { width: 75, length: 170 },  small: { width: 50, length: 170 },  maxHeight: 140 },
+  family:  { large: { width: 75, length: 170 },  small: { width: 50, length: 170 },  maxHeight: 140 },
+  small:   { large: { width: 75, length: 75 },   small: { width: 50, length: 75 },   maxHeight: 140 },
+  double:  { large: { width: 180, length: 170 }, small: { width: 130, length: 170 }, maxHeight: 140 },
 };
+
+export const SIZE_VARIANTS = [
+  { id: 'large', name: 'מידה גדולה' },
+  { id: 'small', name: 'מידה קטנה' },
+];
+
+export function getTombstoneDims(type, variant = 'large') {
+  const entry = TOMBSTONE_DIMENSIONS[type] || TOMBSTONE_DIMENSIONS.regular;
+  return variant === 'small' ? entry.small : entry.large;
+}
 
 // טווחי מידות סבירים (ס"מ) לכל סוג מצבה — משמשים להגבלת שדות המידות בעורך
 export const TOMBSTONE_RANGES = {
-  small:   { width: [55, 80],    length: [55, 95] },
-  regular: { width: [70, 85],    length: [160, 195] },
-  family:  { width: [170, 260],  length: [170, 210] },
-  double:  { width: [115, 165],  length: [160, 200] },
+  small:   { width: [40, 85],    length: [65, 95] },
+  regular: { width: [40, 90],    length: [150, 200] },
+  family:  { width: [40, 90],    length: [150, 200] },
+  double:  { width: [110, 190],  length: [150, 200] },
 };
 
 // ארבעת סוגי המצבות הסטנדרטיים בישראל
 export const TOMBSTONE_TYPES = [
   { id: 'regular', name: 'יחיד', desc: 'מצבת יחיד' },
-  { id: 'double', name: 'זוגית', desc: 'זוגית לכל האורך' },
-  { id: 'family', name: 'מכפלה', desc: 'מכפלה — כמה חלקות סמוכות' },
-  { id: 'small', name: 'חצי', desc: 'מצבת חצי — מצבה קטנה' },
+  { id: 'family',  name: 'משפחתית', desc: 'מצבה משפחתית' },
+  { id: 'small',   name: 'חצי', desc: 'מצבת חצי — מצבה קטנה' },
+  { id: 'double',  name: 'כפולה', desc: 'מצבה כפולה — שני קברים' },
 ];
+
+export const CUSTOM_SIZE_NOTE = 'אפשר גם להזמין מידה אישית — פנו אלינו ונבנה בדיוק לפי המידות שלכם.';
+
+// גימור פני האבן: חלק (מלוטש) או מסותת (פראי) — חל על גוף המצבה, המסגרת והפלטה
+export const STONE_SURFACES = [
+  { id: 'smooth', name: 'חלקה', desc: 'משטח מלוטש וחלק' },
+  { id: 'rock', name: 'מסותתת', desc: 'משטח פראי, סיתות גס' },
+];
+
+// גבהי אבן ראש מקובלים (ס"מ)
+export const HEIGHT_PRESETS = [45, 80, 100, 120];
 
 export const PANELS = [
   { id: 'panel_10', name: 'פאנל 10', geom: 'base_single_tier', height: 0.1 },
@@ -253,6 +288,16 @@ export const SLABS = [
   { id: 'slab_garden_resting', name: 'פלטה מונחת גינה', geom: 'slab_garden', height: 0.08 },
   { id: 'slab_bench_solid', name: 'מסעד גושני', geom: 'slab_bench', height: 0.16 },
   { id: 'slab_designed_typical_2', name: 'סלטה מעוצבת טיפעי', geom: 'slab_raised_center', height: 0.1 },
+  { id: 'slab_split_wave', name: 'כיסוי מחולק – גלי', geom: 'slab_split_wave', height: 0.08 },
+  { id: 'slab_split_diagonal', name: 'כיסוי מחולק – באלכסון', geom: 'slab_split_diagonal', height: 0.08 },
+];
+
+// סוגי פיצול הפלטה (שני קברים / חלקות) — כל אפשרות מפנה לפריט פלטה בקטלוג
+export const SLAB_SPLITS = [
+  { id: 'none', name: 'ללא פיצול', desc: 'פלטה שלמה', slabId: 'slab_8_smooth' },
+  { id: 'straight', name: 'ישר', desc: 'חיתוך ישר לאורך', slabId: 'slab_divided_length' },
+  { id: 'wave', name: 'גלי', desc: 'חיתוך בקו גלי', slabId: 'slab_split_wave' },
+  { id: 'diagonal', name: 'בזווית', desc: 'חיתוך באלכסון', slabId: 'slab_split_diagonal' },
 ];
 
 export const HEADSTONE_TOPS = [
@@ -269,6 +314,12 @@ export const HEADSTONE_TOPS = [
   { id: 'marble_inset', name: 'שיש עם לוח גרניט', geom: 'headstone_marble_inset', desc: 'שיש בהיר עם לוח גרניט שחור משוקע' },
   { id: 'book_pedestal', name: 'ספר פתוח על כן', geom: 'headstone_book_pedestal', desc: 'ספר אבן פתוח על כן' },
   { id: 'tiered_marble', name: 'שיש עם כרכוב', geom: 'headstone_tiered_marble', desc: 'שיש עם כרכוב עליון ובסיס בולט' },
+  { id: 'wave_top', name: 'גלית מלמעלה', geom: 'headstone_wave_top', desc: 'אבן ראש עם גג גלי' },
+  { id: 'side_wall', name: 'קיר צד', geom: 'headstone_side_wall', desc: 'קירות צד משני צידי המצבה' },
+  { id: 'side_wall_heart', name: 'קיר צד לב', geom: 'headstone_side_wall_heart', desc: 'קיר צד עם לב מגולף' },
+  { id: 'side_wall_wave', name: 'קיר צד גל', geom: 'headstone_side_wall_wave', desc: 'קיר צד עם גג גלי' },
+  { id: 'pillows', name: 'זוג כריות', geom: 'headstone_pillows', desc: 'שתי כריות אבן זו לצד זו' },
+  { id: 'none', name: 'ללא אבן ראש', geom: 'headstone_none', desc: 'בלי אבן ראש — פלטה ומסגרת בלבד' },
 ];
 
 export const HEADSTONE_PLACEMENTS = [
@@ -326,6 +377,7 @@ export const LETTERING_TYPES = [
 
 export const NER_HOUSE_ANCHORS = [
   { id: 'front', name: 'חזית המצבה', desc: 'מיקום בחזית, על הפלטה' },
+  { id: 'internal', name: 'פנימי בפלטה', desc: 'בנוי בתוך הפלטה, במיקום לבחירה' },
   { id: 'behind', name: 'מאחורי אבן הראש', desc: 'מאחורי הכרית' },
 ];
 
